@@ -1,0 +1,19 @@
+{
+  "type": "builderdash:telephone",
+  "map": {
+    "time": 5000,
+    "map_id": "builderdash:default"
+  },
+  "players": {
+    "min": 2,
+    "max": 50,
+    "threshold": 2,
+    "countdown": {
+      "ready_seconds": 15,
+      "full_seconds": 60
+    }
+  },
+  "build_time": 240,
+  "guess_time": 40,
+  "double_rounds": true
+}

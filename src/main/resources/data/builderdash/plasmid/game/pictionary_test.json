@@ -1,0 +1,22 @@
+{
+  "type": "builderdash:pictionary",
+  "map": {
+    "time": 5000,
+    "map_id": "builderdash:default"
+  },
+  "players": {
+    "min": 2,
+    "max": 99,
+    "threshold": 2,
+    "countdown": {
+      "ready_seconds": 1,
+      "full_seconds": 1
+    }
+  },
+  "word_list": ["Word One", "Word Two", "Word Three"],
+  "word_choose_time": 20,
+  "max_build_time": 180,
+  "min_build_time": 15,
+  "time_depletion": 0.3,
+  "guess_closeness": 2
+}

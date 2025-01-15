@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "builderdash",
+  "version": "${version}",
+  "name": "Builderdash",
+  "description": "Building minigames",
+  "authors": [
+    "FoundationGames"
+  ],
+  "license": "LGPLv3",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "io.github.foundationgames.builderdash.Builderdash"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.9",
+    "fabric-api": "*",
+    "minecraft": ">=1.21.4",
+    "plasmid": ">=0.6.2"
+  }
+}
