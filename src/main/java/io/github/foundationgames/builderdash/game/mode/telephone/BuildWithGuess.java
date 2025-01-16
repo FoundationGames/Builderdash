@@ -1,17 +1,16 @@
 package io.github.foundationgames.builderdash.game.mode.telephone;
 
 import io.github.foundationgames.builderdash.game.map.BuildZone;
+import org.jetbrains.annotations.Nullable;
 import xyz.nucleoid.plasmid.api.util.PlayerRef;
 
 public class BuildWithGuess {
-    public final int seriesIndex;
     public final PlayerRef builder;
-    public final PlayerRef guesser;
+    public final @Nullable PlayerRef guesser;
     public BuildZone build;
-    public String guess = null;
+    public @Nullable String guess = null;
 
-    public BuildWithGuess(int seriesIndex, PlayerRef builder, PlayerRef guesser) {
-        this.seriesIndex = seriesIndex;
+    public BuildWithGuess(PlayerRef builder, @Nullable PlayerRef guesser) {
         this.builder = builder;
         this.guesser = guesser;
     }

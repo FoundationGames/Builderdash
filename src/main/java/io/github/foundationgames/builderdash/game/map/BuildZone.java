@@ -1,13 +1,23 @@
 package io.github.foundationgames.builderdash.game.map;
 
 import io.github.foundationgames.builderdash.BDUtil;
+import net.minecraft.block.BlockEntityProvider;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.SpawnReason;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.CuboidBlockIterator;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.map_templates.MapTemplate;
+
+import java.util.Set;
+import java.util.UUID;
 
 public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, BlockBounds buildSafeArea) {
     public static BuildZone get(Identifier mapId, MapTemplate template, String marker) {
@@ -45,7 +55,7 @@ public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, Bl
                 buildSafeArea().offset(offset));
     }
 
-    public void copyBuildSlice(ServerWorld world, BlockPos to, int slice) {
+    public void copyBuildSliceWithEntities(ServerWorld world, BlockPos to, int slice) {
         slice = MathHelper.clamp(slice, 0, this.buildSafeArea.size().getY() - 1);
 
         var offset = to.subtract(buildSafeArea().min());
@@ -53,14 +63,57 @@ public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, Bl
         var srcPos = new BlockPos.Mutable();
         var destPos = new BlockPos.Mutable();
 
-        var iter = new CuboidBlockIterator(buildSafeArea().min().getX(), buildSafeArea().min().getY() + slice, buildSafeArea().min().getZ(),
-                buildSafeArea().max().getX(), buildSafeArea().min().getY() + slice, buildSafeArea().max().getZ());
+        var srcMinPos = new BlockPos(buildSafeArea().min().getX(), buildSafeArea().min().getY() + slice, buildSafeArea().min().getZ());
+        var srcMaxPos = new BlockPos(buildSafeArea().max().getX(), buildSafeArea().min().getY() + slice, buildSafeArea().max().getZ());
+
+        var iter = new CuboidBlockIterator(srcMinPos.getX(), srcMinPos.getY(), srcMinPos.getZ(),
+                srcMaxPos.getX(), srcMaxPos.getY(), srcMaxPos.getZ());
 
         while (iter.step()) {
             srcPos.set(iter.getX(), iter.getY(), iter.getZ());
             destPos.set(iter.getX() + offset.getX(), iter.getY() + offset.getY(), iter.getZ() + offset.getZ());
 
-            world.setBlockState(destPos, world.getBlockState(srcPos), 3, 0);
+            var state = world.getBlockState(srcPos);
+            world.setBlockState(destPos, state, 3, 0);
+
+            var be = world.getBlockEntity(srcPos);
+            if (be != null && state.getBlock() instanceof BlockEntityProvider beBlock) {
+                var newBe = beBlock.createBlockEntity(destPos, state);
+                if (newBe != null) {
+                    var nbt = be.createNbt(world.getRegistryManager());
+                    newBe.read(nbt, world.getRegistryManager());
+
+                    world.addBlockEntity(newBe);
+                }
+            }
+        }
+
+        var offsetF = Vec3d.of(offset);
+        var srcMin = Vec3d.of(srcMinPos);
+        var srcMax = Vec3d.of(srcMaxPos).add(1, 1, 1);
+        var dstMin = srcMin.add(offsetF);
+        var dstMax = srcMax.add(offsetF);
+
+        // Delete old entities
+        var entities = world.getOtherEntities(null, new Box(dstMin, dstMax));
+        for (var entity : entities) if (!(entity instanceof PlayerEntity)) {
+            entity.teleport(world, 0, -9999, 0, Set.of(), 0, 0, true);
+            entity.remove(Entity.RemovalReason.KILLED);
+        }
+
+        // Add new copied ones
+        entities = world.getOtherEntities(null, new Box(srcMin, srcMax));
+        for (var entity : entities) if (!(entity instanceof PlayerEntity)) {
+            var nbt = new NbtCompound();
+            entity.writeNbt(nbt);
+
+            var newEntity = entity.getType().create(world, SpawnReason.COMMAND);
+            if (newEntity != null) {
+                newEntity.readNbt(nbt);
+                newEntity.setUuid(UUID.randomUUID());
+                newEntity.setPosition(entity.getPos().add(offsetF));
+                world.spawnEntity(newEntity);
+            }
         }
     }
 
@@ -78,6 +131,16 @@ public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, Bl
             destPos.set(iter.getX() + offset.getX(), iter.getY() + offset.getY(), iter.getZ() + offset.getZ());
 
             world.setBlockState(destPos, world.getBlockState(srcPos), 3, 0);
+        }
+
+        var offsetF = Vec3d.of(offset);
+        var dstMin = Vec3d.of(buildSafeArea().min()).add(offsetF);
+        var dstMax = Vec3d.of(buildSafeArea().max()).add(offsetF).add(1, 1, 1);
+
+        var entities = world.getOtherEntities(null, new Box(dstMin, dstMax));
+        for (var entity : entities) if (!(entity instanceof PlayerEntity)) {
+            entity.teleport(world, 0, -9999, 0, Set.of(), 0, 0, true);
+            entity.remove(Entity.RemovalReason.KILLED);
         }
     }
 
@@ -114,7 +177,7 @@ public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, Bl
                 }
 
                 this.timeToNextSlice = this.ticksPerSlice;
-                this.zone.copyBuildSlice(world, this.dest, this.currentSlice);
+                this.zone.copyBuildSliceWithEntities(world, this.dest, this.currentSlice);
             }
 
             this.timeToNextSlice--;

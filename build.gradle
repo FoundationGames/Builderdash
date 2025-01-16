@@ -51,5 +51,10 @@ tasks.withType(JavaCompile).configureEach {
 
 
 jar {
-    from "LICENSE"
+    from("LICENSE") {
+        rename { "${it}_${project.archivesBaseName}"}
+    }
+    from("LICENSE-PICTIONARYWORDLIST") {
+        rename { "${it}_${project.archivesBaseName}"}
+    }
 }

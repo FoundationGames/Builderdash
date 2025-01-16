@@ -7,6 +7,7 @@ import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
 import io.github.foundationgames.builderdash.game.map.PrivateBuildZoneManager;
 import io.github.foundationgames.builderdash.game.mode.telephone.role.TelephoneBuilderRole;
 import io.github.foundationgames.builderdash.game.mode.telephone.role.TelephoneGalleryControlRole;
+import io.github.foundationgames.builderdash.game.mode.telephone.role.TelephoneGalleryReviewRole;
 import io.github.foundationgames.builderdash.game.mode.telephone.role.TelephonePromptWritingRole;
 import io.github.foundationgames.builderdash.game.player.BDPlayer;
 import io.github.foundationgames.builderdash.game.player.PlayerRole;
@@ -54,6 +55,7 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
     public static final String PLAYERS_PROMPT = "message.builderdash.telephone.players_prompt";
     public static final String PLAYERS_GUESS = "message.builderdash.telephone.players_guess";
     public static final String PLAYERS_BUILD = "message.builderdash.telephone.players_build";
+    public static final String REVEALING_PLAYERS_BUILD = "message.builderdash.telephone.revealing_players_build";
 
     private Phase phase = Phase.PREGAME;
 
@@ -77,6 +79,7 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
 
     private int galleryCurrentSeries = 0;
     private int galleryCurrentRound = 0;
+    private int galleryReviewCurrentBuild;
 
     protected BDTelephoneActivity(GameSpace space, GameActivity game, ServerWorld world, BuilderdashMap map, BDTelephoneConfig config) {
         super(space, game, world, map, config);
@@ -116,8 +119,6 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
         this.maxRounds = maxRounds;
         int buildCount = maxRounds / 2;
 
-        playersEachRound.add(BDUtil.range(0, playerCount)); // Padding
-
         // i = series index, aka "column" of successive builds and guesses
         for (int i = 0; i < playerCount; i++) {
             initialPrompts[i] = new InitialPrompt(i, indexedPlayers.get(playersEachRound.get(0).getInt(i)));
@@ -133,9 +134,15 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
                 var buildRoundNumber = 1 + (2 * b); // First build round is 1, every other build round is 2 * buildNumber after
                 var guessRoundNumber = 2 + (2 * b); // First guess round is 2 (initial prompt doesn't count), same logic as above
 
-                roundBuilds[i] = new BuildWithGuess(i,
-                        indexedPlayers.get(playersEachRound.get(buildRoundNumber).getInt(i)),
-                        indexedPlayers.get(playersEachRound.get(guessRoundNumber).getInt(i)));
+                PlayerRef guesser;
+
+                if (guessRoundNumber >= playersEachRound.size()) {
+                    guesser = null;
+                } else {
+                    guesser = indexedPlayers.get(playersEachRound.get(guessRoundNumber).getInt(i));
+                }
+
+                roundBuilds[i] = new BuildWithGuess(indexedPlayers.get(playersEachRound.get(buildRoundNumber).getInt(i)), guesser);
             }
 
             this.buildRounds.add(roundBuilds);
@@ -192,6 +199,14 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
             }
 
             return;
+        } else if (this.galleryCurrentRound == this.maxRounds - 1) {
+            this.galleryReviewCurrentBuild = (this.maxRounds / 2) - 1;
+
+            for (var player : this.participants.values()) {
+                if (player.currentRole instanceof TelephoneGalleryControlRole) {
+                    player.updateRole(new TelephoneGalleryReviewRole(this.world, player, this));
+                }
+            }
         }
 
         this.gallerySet(this.galleryCurrentRound);
@@ -213,7 +228,7 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
 
             build.builder.ifOnline(this.gameSpace, s ->
                     this.gameSpace.getPlayers().sendMessage(
-                            Text.translatable(PLAYERS_BUILD, s.getDisplayName()).formatted(Formatting.GOLD, Formatting.ITALIC)));
+                            Text.translatable(REVEALING_PLAYERS_BUILD, s.getDisplayName()).formatted(Formatting.GOLD, Formatting.ITALIC)));
         } else {
             final PlayerRef writer;
             final String prompt;
@@ -233,13 +248,80 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
                 tKey = PLAYERS_GUESS;
             }
 
-            writer.ifOnline(this.gameSpace, s ->
-                    this.gameSpace.getPlayers().sendMessage(
-                            Text.translatable(tKey, s.getDisplayName(), prompt)
-                                    .formatted(Formatting.AQUA, Formatting.ITALIC)));
+            if (writer != null) {
+                writer.ifOnline(this.gameSpace, s ->
+                        this.gameSpace.getPlayers().sendMessage(
+                                Text.translatable(tKey, s.getDisplayName(), prompt)
+                                        .formatted(Formatting.AQUA, Formatting.ITALIC)));
+            }
         }
 
         this.updateScoreboard();
+    }
+
+    public void galleryReviewPrevious() {
+        if (this.animationQueue.size() > 0) {
+            return;
+        }
+
+        if (this.galleryReviewCurrentBuild > 0) {
+            this.galleryReviewCurrentBuild--;
+            this.galleryReviewSet(this.galleryReviewCurrentBuild);
+        }
+    }
+
+    public void galleryReviewNext() {
+        if (this.animationQueue.size() > 0) {
+            return;
+        }
+
+        if (this.galleryReviewCurrentBuild < (this.maxRounds / 2) - 1) {
+            this.galleryReviewCurrentBuild++;
+            this.galleryReviewSet(this.galleryReviewCurrentBuild);
+        }
+    }
+
+    public void galleryReviewSet(int buildNumber) {
+        var build = this.buildRounds.get(buildNumber)[this.galleryCurrentSeries];
+        var sliceCount = build.build.buildSafeArea().size().getY();
+
+        for (int i = 0; i < sliceCount; i++) {
+            build.build.copyBuildSliceWithEntities(this.world, this.gameMap.singleZone.buildSafeArea().min(), i);
+        }
+
+        var br = this.buildRounds.get(buildNumber)[this.galleryCurrentSeries];
+        final String prompt, guess = br.guess;
+
+        final PlayerRef prompter, guesser = br.guesser, builder = br.builder;
+
+        if (buildNumber == 0) {
+            var ip = this.initialPrompts[this.galleryCurrentSeries];
+            prompt = Objects.requireNonNullElse(ip.prompt, "(empty)");
+            prompter = ip.prompter;
+        } else {
+            var prevBr = this.buildRounds.get(buildNumber - 1)[this.galleryCurrentSeries];
+            prompt = Objects.requireNonNullElse(prevBr.guess, "(empty)");
+            prompter = prevBr.guesser;
+        }
+
+        builder.ifOnline(this.gameSpace, s ->
+                this.gameSpace.getPlayers().sendMessage(
+                        Text.translatable(PLAYERS_BUILD, s.getDisplayName())
+                                .formatted(Formatting.YELLOW, Formatting.UNDERLINE)));
+
+        if (prompter != null) {
+            prompter.ifOnline(this.gameSpace, s ->
+                    this.gameSpace.getPlayers().sendMessage(
+                            Text.translatable(PLAYERS_PROMPT, s.getDisplayName(), prompt)
+                                    .formatted(Formatting.GRAY)));
+        }
+
+        if (guesser != null) {
+            guesser.ifOnline(this.gameSpace, s ->
+                    this.gameSpace.getPlayers().sendMessage(
+                            Text.translatable(PLAYERS_GUESS, s.getDisplayName(), guess)
+                                    .formatted(Formatting.GRAY)));
+        }
     }
 
     @Override
@@ -296,7 +378,7 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
 
         for (int i = 0; i < initialPrompts.length; i++) {
             var prompt = initialPrompts[i];
-            var player = this.participants.get(prompt.prompter);
+            var player = this.getDataFor(prompt.prompter);
 
             if (player != null) {
                 player.updateRole(new TelephonePromptWritingRole(this.world, player, this, i));
@@ -339,7 +421,7 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
             build.build = privateBuildZones.requestNewBuildZone();
             this.currentlyAssignedZones.put(build.builder, build.build);
 
-            var player = this.participants.get(build.builder);
+            var player = this.getDataFor(build.builder);
             if (player != null) {
                 player.updateRole(new TelephoneBuilderRole(this.world, player, build.build, this, i));
             }
@@ -378,9 +460,14 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
         var builds = this.buildRounds.get(buildNumber);
         for (int i = 0; i < builds.length; i++) {
             var build = builds[i];
+
+            if (build.guesser == null) {
+                continue;
+            }
+
             this.currentlyAssignedZones.put(build.guesser, build.build);
 
-            var player = this.participants.get(build.guesser);
+            var player = this.getDataFor(build.guesser);
             if (player != null) {
                 player.updateRole(new TelephonePromptWritingRole(this.world, player, this, i));
             }
@@ -444,6 +531,9 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
 
             bdPlayer.player.ifOnline(this.gameSpace, this::spawnParticipant);
         }
+
+        this.gameSpace.getPlayers().forEach(s ->
+                s.sendMessageToClient(Text.empty(), true));
 
         this.updateScoreboard();
     }
@@ -540,6 +630,15 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
 
             buildNumber--;
         }
+    }
+
+    private BDPlayer getDataFor(PlayerRef ref) {
+        var data = this.participants.get(ref);
+        if (data == null) {
+            data = this.disconnectedPlayers.get(ref);
+        }
+
+        return data;
     }
 
     public enum Phase {

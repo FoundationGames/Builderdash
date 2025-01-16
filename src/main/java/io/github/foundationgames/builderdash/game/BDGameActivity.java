@@ -4,7 +4,9 @@ import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
 import io.github.foundationgames.builderdash.game.player.BDPlayer;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.network.message.MessageType;
 import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -35,6 +37,7 @@ import xyz.nucleoid.stimuli.event.block.BlockTrampleEvent;
 import xyz.nucleoid.stimuli.event.block.BlockUseEvent;
 import xyz.nucleoid.stimuli.event.block.FlowerPotModifyEvent;
 import xyz.nucleoid.stimuli.event.block.FluidPlaceEvent;
+import xyz.nucleoid.stimuli.event.entity.EntitySpawnEvent;
 import xyz.nucleoid.stimuli.event.entity.EntityUseEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerAttackEntityEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDamageEvent;
@@ -112,7 +115,7 @@ public class BDGameActivity<C extends BDGameConfig> {
         game.listen(PlayerDeathEvent.EVENT, this::onPlayerDeath);
 
         game.listen(BlockPlaceEvent.BEFORE, (player, world1, pos, state, context) ->
-                this.canPlayerModify(player, pos));
+                this.canPlayerModify(player, context.getBlockPos()));
         game.listen(FluidPlaceEvent.EVENT, (world1, pos, player, hitResult) ->
                 this.canPlayerModify(player, pos));
         game.listen(BlockBreakEvent.EVENT, (player, world1, pos) ->
@@ -131,6 +134,12 @@ public class BDGameActivity<C extends BDGameConfig> {
         });
         game.listen(PlayerAttackEntityEvent.EVENT, (player, hand, attacked, hitResult) ->
                 this.canPlayerModify(player, attacked.getBlockPos()));
+        game.listen(EntitySpawnEvent.EVENT, entity -> {
+            if (entity instanceof MobEntity mob) {
+                mob.setAiDisabled(true);
+            }
+            return EventResult.PASS;
+        });
 
         game.listen(ReplacePlayerChatEvent.EVENT, this::consumeChatMessage);
 
