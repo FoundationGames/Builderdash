@@ -3,7 +3,6 @@ package io.github.foundationgames.builderdash.game.mode.telephone.ui;
 import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import eu.pb4.sgui.api.gui.HotbarGui;
 import io.github.foundationgames.builderdash.game.mode.telephone.BDTelephoneActivity;
-import net.minecraft.component.ComponentType;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.PotionContentsComponent;
 import net.minecraft.item.Items;

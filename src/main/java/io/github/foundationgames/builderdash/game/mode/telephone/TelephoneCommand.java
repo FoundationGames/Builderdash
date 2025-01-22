@@ -2,7 +2,6 @@ package io.github.foundationgames.builderdash.game.mode.telephone;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.github.foundationgames.builderdash.Builderdash;
-import io.github.foundationgames.builderdash.game.mode.pictionary.BDPictionaryConfig;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;

@@ -45,4 +45,10 @@ public class BDPlayer {
             this.currentRole.tick();
         }
     }
+
+    public void end() {
+        if (this.currentRole != null) {
+            this.currentRole.end();
+        }
+    }
 }

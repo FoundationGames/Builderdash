@@ -10,7 +10,6 @@
   "title.builderdash.pictionary.was_the_word": "was the word!",
   "title.builderdash.pictionary.is_choosing_word": "is choosing a word...",
   "title.builderdash.pictionary.word_chosen": "The word has been chosen!",
-  "title.builderdash.pictionary.won_the_game": "won the game!",
 
   "gameType.builderdash.telephone": "Builderdash: Telephone",
   "label.builderdash.telephone.prompt_writing": "Prompt Writing: %s/%s",
@@ -41,6 +40,35 @@
 
   "label.builderdash.time_remaining": "Time Remaining: %s",
   "label.builderdash.you_are_building": "You're Building: %s",
+  "title.builderdash.won_the_game": "won the game!",
+  "item.builderdash.tool_undo": "Undo",
+  "item.builderdash.tool_redo": "Redo",
+  "item.builderdash.tool_fill": "Box Fill",
+  "item.builderdash.tool_sphere": "Sphere Fill",
+  "item.builderdash.tool_cylinder": "Cylinder Fill",
+  "item.builderdash.tool_cone": "Cone Fill",
+  "item.builderdash.tool_filter_whitelist": "Filter: Replace Only",
+  "item.builderdash.tool_filter_blacklist": "Filter: Replace All Except",
+  "item.builderdash.tool_brush_small": "Small Brush",
+  "item.builderdash.tool_brush_med": "Medium Brush",
+  "item.builderdash.tool_brush_large": "Large Brush",
+
+  "tooltip.builderdash.tool.tool": "Hold a block or bundle in your offhand,",
+  "tooltip.builderdash.tool.fill": "then right-click and drag to fill an area.",
+  "tooltip.builderdash.tool.brush": "then right-click to paint.",
+  "tooltip.builderdash.tool.filter_active": "When in hotbar:",
+  "tooltip.builderdash.tool.filter_whitelist": "Tools only replace blocks inside this bundle.",
+  "tooltip.builderdash.tool.filter_blacklist": "Tools replace all blocks except those in this bundle.",
+  "tooltip.builderdash.tool.filter_use_air": "Insert a Glass Bottle to specify Air blocks.",
+
+  "message.builderdash.tool.undo": "Undone, modified %s blocks.",
+  "message.builderdash.tool.redo": "Redone, modified %s blocks.",
+  "message.builderdash.tool.undo_fail": "Nothing left to undo!",
+  "message.builderdash.tool.redo_fail": "Nothing left to redo!",
+  "message.builderdash.tool.operation": "Modified %s blocks.",
+  "message.builderdash.tool.forbidden": "You are not allowed to use Builderdash Toolbox tools here!",
+
+  "gui.builderdash.toolbox": "Builderdash Toolbox",
 
   "command.builderdash.pictionary.word_list_add": "Added %s words to the Pictionary word list",
   "command.builderdash.pictionary.word_list_set": "The Pictionary word list has been overwritten with %s words",

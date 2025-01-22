@@ -35,7 +35,6 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
     public static final Text IS_CHOOSING_WORD = Text.translatable("title.builderdash.pictionary.is_choosing_word").formatted(Formatting.GOLD);
     public static final Text WORD_CHOSEN = Text.translatable("title.builderdash.pictionary.word_chosen").formatted(Formatting.AQUA);
     public static final Text WAS_THE_WORD = Text.translatable("title.builderdash.pictionary.was_the_word").formatted(Formatting.YELLOW);
-    public static final Text WON_THE_GAME = Text.translatable("title.builderdash.pictionary.won_the_game").formatted(Formatting.GREEN);
     public static final Text GUESS_IN_CHAT = Text.translatable("message.builderdash.pictionary.guess_in_chat").formatted(Formatting.GOLD);
 
     public static final String GUESSED_WORD = "message.builderdash.pictionary.player_guessed_word";

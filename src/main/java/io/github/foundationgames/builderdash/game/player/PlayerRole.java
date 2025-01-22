@@ -1,5 +1,6 @@
 package io.github.foundationgames.builderdash.game.player;
 
+import io.github.foundationgames.builderdash.tools.BDToolsState;
 import net.minecraft.network.message.MessageType;
 import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.world.ServerWorld;
@@ -9,6 +10,8 @@ import net.minecraft.world.GameMode;
 public class PlayerRole {
     public final ServerWorld world;
     public final BDPlayer player;
+
+    protected BDToolsState tools;
 
     public PlayerRole(ServerWorld world, BDPlayer player) {
         this.world = world;
@@ -27,11 +30,22 @@ public class PlayerRole {
         return GameMode.ADVENTURE;
     }
 
-    public void init() {}
+    public void init() {
+        this.tools = createTools();
+    }
 
     public void tick() {}
 
-    public void end() {}
+    public void end() {
+        if (this.tools != null) {
+            this.tools.destroy();
+            this.tools = null;
+        }
+    }
+
+    protected BDToolsState createTools() {
+        return new BDToolsState.Forbidden(world.getServer(), player.player, 1, null);
+    }
 
     public static class Flying extends PlayerRole {
         public Flying(ServerWorld world, BDPlayer player) {

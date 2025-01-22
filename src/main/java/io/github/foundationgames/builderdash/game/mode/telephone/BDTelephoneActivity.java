@@ -641,6 +641,15 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
         return data;
     }
 
+    @Override
+    protected void onClose() {
+        super.onClose();
+
+        for (var player : this.disconnectedPlayers.values()) {
+            player.end();
+        }
+    }
+
     public enum Phase {
         PREGAME,
         INITIAL_PROMPT,

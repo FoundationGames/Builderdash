@@ -1,13 +1,17 @@
 package io.github.foundationgames.builderdash;
 
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.github.foundationgames.builderdash.game.BDLobbyActivity;
 import io.github.foundationgames.builderdash.game.mode.pictionary.BDPictionaryConfig;
 import io.github.foundationgames.builderdash.game.mode.pictionary.CustomWordsPersistentState;
 import io.github.foundationgames.builderdash.game.mode.pictionary.PictionaryCommand;
 import io.github.foundationgames.builderdash.game.mode.telephone.BDTelephoneConfig;
 import io.github.foundationgames.builderdash.game.mode.telephone.TelephoneCommand;
+import io.github.foundationgames.builderdash.tools.BDToolsItems;
+import io.github.foundationgames.builderdash.tools.BDToolsState;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.command.CommandManager;
@@ -69,11 +73,25 @@ public class Builderdash implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
-                dispatcher.register(CommandManager.literal("builderdash")
-                        .then(PictionaryCommand.createCommand(CommandManager.literal("pictionary")))
-                        .then(TelephoneCommand.createCommand(CommandManager.literal("telephone")))
-                ));
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            var cmd = dispatcher.register(createCommand(CommandManager.literal("builderdash")));
+            dispatcher.register(CommandManager.literal("bd").redirect(cmd));
+        });
+
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> BDToolsState.onServerStart());
+
+        BDToolsItems.init();
+    }
+
+    public static LiteralArgumentBuilder<ServerCommandSource> createCommand(LiteralArgumentBuilder<ServerCommandSource> command) {
+        return command
+                .then(PictionaryCommand.createCommand(CommandManager.literal("pictionary")))
+                .then(TelephoneCommand.createCommand(CommandManager.literal("telephone")))
+                .then(CommandManager.literal("toolbox").executes(ctx -> {
+                    var player = ctx.getSource().getPlayer();
+                    BDToolsState.get(player).openToolbox(player);
+                    return 0;
+                }));
     }
 
     public static Identifier id(String path) {

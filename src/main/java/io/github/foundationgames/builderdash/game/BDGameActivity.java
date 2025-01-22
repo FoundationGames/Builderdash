@@ -4,7 +4,6 @@ import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
 import io.github.foundationgames.builderdash.game.player.BDPlayer;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.network.message.MessageType;
@@ -50,6 +49,7 @@ import java.util.stream.Collectors;
 public class BDGameActivity<C extends BDGameConfig> {
     public static final String TIME_REMAINING = "label.builderdash.time_remaining";
     public static final String YOU_ARE_BUILDING = "label.builderdash.you_are_building";
+    public static final Text WON_THE_GAME = Text.translatable("title.builderdash.won_the_game").formatted(Formatting.GREEN);
 
     public static final int SEC = 20;
 
@@ -157,6 +157,9 @@ public class BDGameActivity<C extends BDGameConfig> {
     }
 
     protected void onClose() {
+        for (var player : this.participants.values()) {
+            player.end();
+        }
     }
 
     protected JoinOfferResult onPlayerOffer(JoinOffer offer) {
