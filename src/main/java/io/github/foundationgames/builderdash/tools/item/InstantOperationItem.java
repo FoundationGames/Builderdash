@@ -11,6 +11,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Rarity;
+import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import xyz.nucleoid.packettweaker.PacketContext;
@@ -40,13 +41,8 @@ public class InstantOperationItem extends Item implements PolymerItem {
     }
 
     @Override
-    public Item getPolymerItem(ItemStack itemStack, PacketContext context) {
-        return Items.SNOWBALL;
-    }
-
-    @Override
-    public @Nullable Identifier getPolymerItemModel(ItemStack stack, PacketContext context) {
-        return this.model;
+    public Item getPolymerItem(ItemStack itemStack, @Nullable ServerPlayerEntity player) {
+        return Items.EGG;
     }
 
     @Override
@@ -54,12 +50,12 @@ public class InstantOperationItem extends Item implements PolymerItem {
         return true;
     }
 
-    public ActionResult use(World world, PlayerEntity user, Hand hand) {
+    public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
         if (user instanceof ServerPlayerEntity player) {
             var tools = BDToolsState.get(player);
             operation.accept(tools);
 
-            return ActionResult.SUCCESS;
+            return TypedActionResult.success(user.getStackInHand(hand));
         }
 
         return super.use(world, user, hand);

@@ -13,7 +13,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import xyz.nucleoid.map_templates.MapTemplate;
 import xyz.nucleoid.map_templates.TemplateRegion;
-import xyz.nucleoid.plasmid.api.game.GameOpenException;
+import xyz.nucleoid.plasmid.game.GameOpenException;
 
 import java.util.Optional;
 import java.util.stream.IntStream;

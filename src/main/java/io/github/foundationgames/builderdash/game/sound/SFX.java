@@ -9,7 +9,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
-import xyz.nucleoid.plasmid.api.util.PlayerRef;
+import xyz.nucleoid.plasmid.util.PlayerRef;
 
 import java.util.ArrayDeque;
 import java.util.Collection;

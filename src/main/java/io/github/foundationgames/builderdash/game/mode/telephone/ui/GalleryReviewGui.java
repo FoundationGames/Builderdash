@@ -28,7 +28,7 @@ public class GalleryReviewGui extends HotbarGui {
         this.setSlot(1, new GuiElementBuilder().setItem(Items.TIPPED_ARROW)
                 .setComponent(DataComponentTypes.POTION_CONTENTS, new PotionContentsComponent(Potions.LUCK))
                 .setName(VIEW_NEXT).glow().setCallback(clickType -> this.telephone.galleryReviewNext()));
-        this.setSlot(2, new GuiElementBuilder().setItem(Items.FIELD_MASONED_BANNER_PATTERN)
+        this.setSlot(2, new GuiElementBuilder().setItem(Items.MOJANG_BANNER_PATTERN)
                 .setName(END_GALLERY).glow().setCallback(clickType -> this.telephone.galleryContinue()));
     }
 

@@ -23,7 +23,7 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import xyz.nucleoid.map_templates.BlockBounds;
-import xyz.nucleoid.plasmid.api.util.PlayerRef;
+import xyz.nucleoid.plasmid.util.PlayerRef;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -376,7 +376,7 @@ public class BDToolsState {
             boolean blacklist = false;
             var paint = new ArrayList<BlockState>();
 
-            for (int i = 0; i < PlayerInventory.HOTBAR_SIZE; i++) {
+            for (int i = 0; i < PlayerInventory.getHotbarSize(); i++) {
                 var stack = inv.getStack(i);
                 var data = stack.get(DataComponentTypes.CUSTOM_DATA);
 

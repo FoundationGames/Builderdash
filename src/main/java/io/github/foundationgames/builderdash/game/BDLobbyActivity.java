@@ -10,16 +10,15 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
-import xyz.nucleoid.plasmid.api.game.GameOpenContext;
-import xyz.nucleoid.plasmid.api.game.GameOpenProcedure;
-import xyz.nucleoid.plasmid.api.game.GameResult;
-import xyz.nucleoid.plasmid.api.game.GameSpace;
-import xyz.nucleoid.plasmid.api.game.common.GameWaitingLobby;
-import xyz.nucleoid.plasmid.api.game.event.GameActivityEvents;
-import xyz.nucleoid.plasmid.api.game.event.GamePlayerEvents;
-import xyz.nucleoid.plasmid.api.game.player.JoinOffer;
-import xyz.nucleoid.plasmid.api.game.rule.GameRuleType;
-import xyz.nucleoid.stimuli.event.EventResult;
+import xyz.nucleoid.plasmid.game.GameOpenContext;
+import xyz.nucleoid.plasmid.game.GameOpenProcedure;
+import xyz.nucleoid.plasmid.game.GameResult;
+import xyz.nucleoid.plasmid.game.GameSpace;
+import xyz.nucleoid.plasmid.game.common.GameWaitingLobby;
+import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
+import xyz.nucleoid.plasmid.game.event.GamePlayerEvents;
+import xyz.nucleoid.plasmid.game.player.JoinOffer;
+import xyz.nucleoid.plasmid.game.rule.GameRuleType;
 import xyz.nucleoid.stimuli.event.block.BlockUseEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
@@ -77,10 +76,10 @@ public class BDLobbyActivity<C extends BDGameConfig> {
         this.spawnPlayer(player);
     }
 
-    private EventResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
+    private ActionResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
         player.setHealth(20.0f);
         this.spawnPlayer(player);
-        return EventResult.DENY;
+        return ActionResult.FAIL;
     }
 
     private void spawnPlayer(ServerPlayerEntity player) {

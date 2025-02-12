@@ -25,7 +25,7 @@ public class BDToolsItems {
     public static <T extends Item> T register(Function<Item.Settings, T> item, String name) {
         var id = Builderdash.id(name);
         return Registry.register(Registries.ITEM, id,
-                item.apply(new Item.Settings().registryKey(RegistryKey.of(RegistryKeys.ITEM, id))));
+                item.apply(new Item.Settings()));
     }
 
     public static void init() {

@@ -1,6 +1,6 @@
 package io.github.foundationgames.builderdash.game.mode.telephone;
 
-import xyz.nucleoid.plasmid.api.util.PlayerRef;
+import xyz.nucleoid.plasmid.util.PlayerRef;
 
 public class InitialPrompt {
     public final int seriesIndex;

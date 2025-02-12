@@ -113,7 +113,7 @@ public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, Bl
         // Delete old entities
         var entities = world.getOtherEntities(null, new Box(dstMin, dstMax));
         for (var entity : entities) if (!(entity instanceof PlayerEntity)) {
-            entity.teleport(world, 0, -9999, 0, Set.of(), 0, 0, true);
+            entity.teleport(world, 0, -9999, 0, Set.of(), 0, 0);
             entity.remove(Entity.RemovalReason.KILLED);
 
             changed = true;
@@ -125,7 +125,7 @@ public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, Bl
             var nbt = new NbtCompound();
             entity.writeNbt(nbt);
 
-            var newEntity = entity.getType().create(world, SpawnReason.COMMAND);
+            var newEntity = entity.getType().create(world);
             if (newEntity != null) {
                 newEntity.readNbt(nbt);
                 newEntity.setUuid(UUID.randomUUID());
@@ -161,7 +161,7 @@ public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, Bl
 
         var entities = world.getOtherEntities(null, new Box(dstMin, dstMax));
         for (var entity : entities) if (!(entity instanceof PlayerEntity)) {
-            entity.teleport(world, 0, -9999, 0, Set.of(), 0, 0, true);
+            entity.teleport(world, 0, -9999, 0, Set.of(), 0, 0);
             entity.remove(Entity.RemovalReason.KILLED);
         }
     }

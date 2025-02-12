@@ -9,11 +9,11 @@ import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMapConfig;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
-import xyz.nucleoid.plasmid.api.game.GameSpace;
-import xyz.nucleoid.plasmid.api.game.common.config.WaitingLobbyConfig;
+import xyz.nucleoid.plasmid.game.GameSpace;
+import xyz.nucleoid.plasmid.game.common.config.PlayerConfig;
 
 public record BDTelephoneConfig(
-        WaitingLobbyConfig players, int buildTime, int guessTime, boolean doubleRounds, BuilderdashMapConfig map
+        PlayerConfig players, int buildTime, int guessTime, boolean doubleRounds, BuilderdashMapConfig map
 ) implements BDGameConfig {
     public static final Identifier DEFAULT_CONFIG = Builderdash.id("telephone");
     public static final Identifier FAST_CONFIG = Builderdash.id("telephone_fast");
@@ -22,7 +22,7 @@ public record BDTelephoneConfig(
     public static final Identifier TEST_CONFIG = Builderdash.id("telephone_test");
 
     public static final MapCodec<BDTelephoneConfig> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            WaitingLobbyConfig.CODEC.fieldOf("players").forGetter(BDTelephoneConfig::players),
+            PlayerConfig.CODEC.fieldOf("players").forGetter(BDTelephoneConfig::players),
             Codec.INT.fieldOf("build_time").forGetter(BDTelephoneConfig::buildTime),
             Codec.INT.fieldOf("guess_time").forGetter(BDTelephoneConfig::guessTime),
             Codec.BOOL.fieldOf("double_rounds").forGetter(BDTelephoneConfig::doubleRounds),
@@ -35,7 +35,7 @@ public record BDTelephoneConfig(
     }
 
     @Override
-    public WaitingLobbyConfig getLobbyConfig() {
+    public PlayerConfig getLobbyConfig() {
         return players();
     }
 

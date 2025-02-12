@@ -9,7 +9,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.item.consume.UseAction;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -17,6 +16,8 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Rarity;
+import net.minecraft.util.TypedActionResult;
+import net.minecraft.util.UseAction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
@@ -60,13 +61,8 @@ public class AreaOperationItem extends Item implements PolymerItem {
     }
 
     @Override
-    public Item getPolymerItem(ItemStack itemStack, PacketContext context) {
+    public Item getPolymerItem(ItemStack itemStack, @Nullable ServerPlayerEntity player) {
         return Items.TRIDENT;
-    }
-
-    @Override
-    public @Nullable Identifier getPolymerItemModel(ItemStack stack, PacketContext context) {
-        return this.model;
     }
 
     @Override
@@ -75,8 +71,8 @@ public class AreaOperationItem extends Item implements PolymerItem {
     }
 
     @Override
-    public void modifyClientTooltip(List<Text> tooltip, ItemStack stack, PacketContext context) {
-        PolymerItem.super.modifyClientTooltip(tooltip, stack, context);
+    public void modifyClientTooltip(List<Text> tooltip, ItemStack stack, @Nullable ServerPlayerEntity player) {
+        PolymerItem.super.modifyClientTooltip(tooltip, stack, player);
 
         tooltip.add(TOOL);
         tooltip.add(FILL);
@@ -92,9 +88,9 @@ public class AreaOperationItem extends Item implements PolymerItem {
         return 72000;
     }
 
-    public ActionResult use(World world, PlayerEntity user, Hand hand) {
+    public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
         user.setCurrentHand(hand);
-        return ActionResult.CONSUME;
+        return TypedActionResult.consume(user.getStackInHand(hand));
     }
 
     @Override
@@ -112,7 +108,7 @@ public class AreaOperationItem extends Item implements PolymerItem {
     }
 
     @Override
-    public boolean onStoppedUsing(ItemStack stack, World world, LivingEntity user, int remainingUseTicks) {
+    public void onStoppedUsing(ItemStack stack, World world, LivingEntity user, int remainingUseTicks) {
         if (user instanceof ServerPlayerEntity player) {
             var tools = BDToolsState.get(player);
             var hit = player.raycast(32, 0, false);
@@ -121,9 +117,9 @@ public class AreaOperationItem extends Item implements PolymerItem {
             var sel = tools.endSelection(BlockPos.ofFloored(hit.getPos().add(os)));
             operation.accept(tools, sel);
 
-            return true;
+            return;
         }
 
-        return super.onStoppedUsing(stack, world, user, remainingUseTicks);
+        super.onStoppedUsing(stack, world, user, remainingUseTicks);
     }
 }

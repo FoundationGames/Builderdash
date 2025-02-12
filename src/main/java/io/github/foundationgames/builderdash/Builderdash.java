@@ -22,12 +22,12 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.util.Identifier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import xyz.nucleoid.plasmid.api.game.GameTexts;
-import xyz.nucleoid.plasmid.api.game.GameType;
-import xyz.nucleoid.plasmid.api.game.config.CustomValuesConfig;
-import xyz.nucleoid.plasmid.api.game.config.GameConfig;
-import xyz.nucleoid.plasmid.api.game.config.GameConfigs;
-import xyz.nucleoid.plasmid.impl.game.manager.GameSpaceManagerImpl;
+import xyz.nucleoid.plasmid.game.GameTexts;
+import xyz.nucleoid.plasmid.game.GameType;
+import xyz.nucleoid.plasmid.game.config.CustomValuesConfig;
+import xyz.nucleoid.plasmid.game.config.GameConfig;
+import xyz.nucleoid.plasmid.game.config.GameConfigs;
+import xyz.nucleoid.plasmid.game.manager.GameSpaceManager;
 
 public class Builderdash implements ModInitializer {
 
@@ -56,8 +56,8 @@ public class Builderdash implements ModInitializer {
     public static int openBuilderdashGame(ServerCommandSource cmd, Identifier gameConfigId) {
         var server = cmd.getServer();
         var key = RegistryKey.of(GameConfigs.REGISTRY_KEY, gameConfigId);
-        var registry = server.getRegistryManager().getOrThrow(GameConfigs.REGISTRY_KEY);
-        var configEntry = registry.getOptional(key).orElse(null);
+        var registry = server.getRegistryManager().get(GameConfigs.REGISTRY_KEY);
+        var configEntry = registry.getEntry(key).orElse(null);
 
         if (configEntry == null) {
             LOG.error("Builtin game config {} not registered!", gameConfigId);
@@ -72,7 +72,7 @@ public class Builderdash implements ModInitializer {
             }
 
             // TODO: Handle errors?
-            GameSpaceManagerImpl.get().open(RegistryEntry.of(value)).thenAccept(space ->
+            GameSpaceManager.get().open(RegistryEntry.of(value)).thenAccept(space ->
                     server.getPlayerManager().broadcast(GameTexts.Broadcast.gameOpened(cmd, space), false));
             return 0;
         }

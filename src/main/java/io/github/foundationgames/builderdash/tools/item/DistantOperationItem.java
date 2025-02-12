@@ -13,6 +13,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Rarity;
+import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
@@ -51,13 +52,8 @@ public class DistantOperationItem extends Item implements PolymerItem {
     }
 
     @Override
-    public Item getPolymerItem(ItemStack itemStack, PacketContext context) {
+    public Item getPolymerItem(ItemStack itemStack, @Nullable ServerPlayerEntity player) {
         return Items.SNOWBALL;
-    }
-
-    @Override
-    public @Nullable Identifier getPolymerItemModel(ItemStack stack, PacketContext context) {
-        return this.model;
     }
 
     @Override
@@ -66,14 +62,14 @@ public class DistantOperationItem extends Item implements PolymerItem {
     }
 
     @Override
-    public void modifyClientTooltip(List<Text> tooltip, ItemStack stack, PacketContext context) {
-        PolymerItem.super.modifyClientTooltip(tooltip, stack, context);
+    public void modifyClientTooltip(List<Text> tooltip, ItemStack stack, @Nullable ServerPlayerEntity player) {
+        PolymerItem.super.modifyClientTooltip(tooltip, stack, player);
 
         tooltip.add(AreaOperationItem.TOOL);
         tooltip.add(BRUSH);
     }
 
-    public ActionResult use(World world, PlayerEntity user, Hand hand) {
+    public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
         if (user instanceof ServerPlayerEntity player) {
             var tools = BDToolsState.get(player);
             var hit = player.raycast(64, 0, false);
@@ -81,7 +77,7 @@ public class DistantOperationItem extends Item implements PolymerItem {
 
             operation.accept(tools, BlockPos.ofFloored(hit.getPos().add(os)));
 
-            return ActionResult.SUCCESS;
+            return TypedActionResult.success(user.getStackInHand(hand));
         }
 
         return super.use(world, user, hand);

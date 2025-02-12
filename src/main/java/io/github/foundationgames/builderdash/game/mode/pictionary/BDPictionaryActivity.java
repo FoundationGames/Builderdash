@@ -22,10 +22,10 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.Nullable;
-import xyz.nucleoid.plasmid.api.game.GameActivity;
-import xyz.nucleoid.plasmid.api.game.GameCloseReason;
-import xyz.nucleoid.plasmid.api.game.GameSpace;
-import xyz.nucleoid.plasmid.api.util.PlayerRef;
+import xyz.nucleoid.plasmid.game.GameActivity;
+import xyz.nucleoid.plasmid.game.GameCloseReason;
+import xyz.nucleoid.plasmid.game.GameSpace;
+import xyz.nucleoid.plasmid.util.PlayerRef;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;

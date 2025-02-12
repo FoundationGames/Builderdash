@@ -1,7 +1,7 @@
 package io.github.foundationgames.builderdash.game.mode.versus;
 
 import io.github.foundationgames.builderdash.game.map.BuildZone;
-import xyz.nucleoid.plasmid.api.util.PlayerRef;
+import xyz.nucleoid.plasmid.util.PlayerRef;
 
 public class BuildPairWithPrompt {
     public final String prompt;

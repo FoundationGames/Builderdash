@@ -19,6 +19,7 @@ repositories {
         name = "Nucleoid"
         url = "https://maven.nucleoid.xyz/"
     }
+    mavenLocal()
 }
 
 dependencies {
@@ -31,7 +32,7 @@ dependencies {
     modImplementation("net.fabricmc.fabric-api:fabric-api:${project.fabric_version}")
 
     // Plasmid
-    modImplementation("xyz.nucleoid:plasmid:${project.plasmid_version}")
+    include(modImplementation("xyz.nucleoid:plasmid:${project.plasmid_version}"))
 }
 
 processResources {

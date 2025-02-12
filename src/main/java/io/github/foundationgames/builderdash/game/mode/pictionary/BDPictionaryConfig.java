@@ -11,13 +11,13 @@ import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMapConfig;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
-import xyz.nucleoid.plasmid.api.game.GameSpace;
-import xyz.nucleoid.plasmid.api.game.common.config.WaitingLobbyConfig;
+import xyz.nucleoid.plasmid.game.GameSpace;
+import xyz.nucleoid.plasmid.game.common.config.PlayerConfig;
 
 import java.util.ArrayList;
 
 public record BDPictionaryConfig(
-        WaitingLobbyConfig players, WordList wordList, int wordChooseTime, int maxBuildTime, int minBuildTime,
+        PlayerConfig players, WordList wordList, int wordChooseTime, int maxBuildTime, int minBuildTime,
         float guesserThreshold, float revealPercent, int guessCloseness, boolean doubleRounds, BuilderdashMapConfig map
 ) implements BDGameConfig, BDCustomWordsConfig<BDPictionaryConfig> {
     public static final Identifier DEFAULT_CONFIG = Builderdash.id("pictionary");
@@ -25,7 +25,7 @@ public record BDPictionaryConfig(
     public static final Identifier TEST_CONFIG = Builderdash.id("pictionary_test");
 
     public static final MapCodec<BDPictionaryConfig> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            WaitingLobbyConfig.CODEC.fieldOf("players").forGetter(BDPictionaryConfig::players),
+            PlayerConfig.CODEC.fieldOf("players").forGetter(BDPictionaryConfig::players),
             WordList.CODEC.fieldOf("word_list").forGetter(BDPictionaryConfig::wordList),
             Codec.INT.fieldOf("word_choose_time").forGetter(BDPictionaryConfig::wordChooseTime),
             Codec.INT.fieldOf("max_build_time").forGetter(BDPictionaryConfig::maxBuildTime),
@@ -61,7 +61,7 @@ public record BDPictionaryConfig(
     }
 
     @Override
-    public WaitingLobbyConfig getLobbyConfig() {
+    public PlayerConfig getLobbyConfig() {
         return players();
     }
 

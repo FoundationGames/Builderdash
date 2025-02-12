@@ -1,6 +1,7 @@
 package io.github.foundationgames.builderdash.game;
 
 import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
+import io.github.foundationgames.builderdash.BDUtil;
 import io.github.foundationgames.builderdash.game.element.TickingAnimation;
 import io.github.foundationgames.builderdash.game.element.display.GenericContent;
 import io.github.foundationgames.builderdash.game.map.BuildZone;
@@ -20,25 +21,25 @@ import net.minecraft.registry.tag.DamageTypeTags;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
 import org.jetbrains.annotations.Nullable;
 import xyz.nucleoid.map_templates.BlockBounds;
-import xyz.nucleoid.plasmid.api.game.GameActivity;
-import xyz.nucleoid.plasmid.api.game.GameCloseReason;
-import xyz.nucleoid.plasmid.api.game.GameSpace;
-import xyz.nucleoid.plasmid.api.game.common.GlobalWidgets;
-import xyz.nucleoid.plasmid.api.game.common.widget.BossBarWidget;
-import xyz.nucleoid.plasmid.api.game.common.widget.SidebarWidget;
-import xyz.nucleoid.plasmid.api.game.event.GameActivityEvents;
-import xyz.nucleoid.plasmid.api.game.event.GamePlayerEvents;
-import xyz.nucleoid.plasmid.api.game.player.JoinOffer;
-import xyz.nucleoid.plasmid.api.game.player.JoinOfferResult;
-import xyz.nucleoid.plasmid.api.game.rule.GameRuleType;
-import xyz.nucleoid.plasmid.api.util.PlayerRef;
-import xyz.nucleoid.stimuli.event.EventResult;
+import xyz.nucleoid.plasmid.game.GameActivity;
+import xyz.nucleoid.plasmid.game.GameCloseReason;
+import xyz.nucleoid.plasmid.game.GameSpace;
+import xyz.nucleoid.plasmid.game.common.GlobalWidgets;
+import xyz.nucleoid.plasmid.game.common.widget.BossBarWidget;
+import xyz.nucleoid.plasmid.game.common.widget.SidebarWidget;
+import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
+import xyz.nucleoid.plasmid.game.event.GamePlayerEvents;
+import xyz.nucleoid.plasmid.game.player.JoinOffer;
+import xyz.nucleoid.plasmid.game.player.JoinOfferResult;
+import xyz.nucleoid.plasmid.game.rule.GameRuleType;
+import xyz.nucleoid.plasmid.util.PlayerRef;
 import xyz.nucleoid.stimuli.event.block.BlockBreakEvent;
 import xyz.nucleoid.stimuli.event.block.BlockPlaceEvent;
 import xyz.nucleoid.stimuli.event.block.BlockTrampleEvent;
@@ -91,7 +92,7 @@ public class BDGameActivity<C extends BDGameConfig> {
     protected BossBarWidget timerBar = null;
 
     protected BDGameActivity(GameSpace space, GameActivity game, ServerWorld world, BuilderdashMap map, C config) {
-        Set<PlayerRef> participants = space.getPlayers().participants().stream()
+        Set<PlayerRef> participants = space.getPlayers().stream()
                 .map(PlayerRef::of)
                 .collect(Collectors.toSet());
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
@@ -110,20 +111,19 @@ public class BDGameActivity<C extends BDGameConfig> {
             this.participants.put(player, new BDPlayer(world, player));
         }
 
-        game.setRule(GameRuleType.CRAFTING, EventResult.DENY);
-        game.setRule(GameRuleType.PORTALS, EventResult.DENY);
-        game.setRule(GameRuleType.PVP, EventResult.DENY);
-        game.setRule(GameRuleType.HUNGER, EventResult.DENY);
-        game.setRule(GameRuleType.FALL_DAMAGE, EventResult.DENY);
-        game.setRule(GameRuleType.BLOCK_DROPS, EventResult.DENY);
-        game.setRule(GameRuleType.THROW_ITEMS, EventResult.DENY);
-        game.setRule(GameRuleType.UNSTABLE_TNT, EventResult.DENY);
-        game.setRule(GameRuleType.FIRE_TICK, EventResult.DENY);
-        game.listen(ExplosionDetonatedEvent.EVENT, (explosion, blocksToDestroy) -> EventResult.DENY);
+        game.setRule(GameRuleType.CRAFTING, ActionResult.FAIL);
+        game.setRule(GameRuleType.PORTALS, ActionResult.FAIL);
+        game.setRule(GameRuleType.PVP, ActionResult.FAIL);
+        game.setRule(GameRuleType.HUNGER, ActionResult.FAIL);
+        game.setRule(GameRuleType.FALL_DAMAGE, ActionResult.FAIL);
+        game.setRule(GameRuleType.BLOCK_DROPS, ActionResult.FAIL);
+        game.setRule(GameRuleType.THROW_ITEMS, ActionResult.FAIL);
+        game.setRule(GameRuleType.UNSTABLE_TNT, ActionResult.FAIL);
+        game.setRule(GameRuleType.FIRE_TICK, ActionResult.FAIL);
+        game.listen(ExplosionDetonatedEvent.EVENT, (explosion, blocksToDestroy) -> explosion.clearAffectedBlocks());
 
         game.listen(GameActivityEvents.ENABLE, this::onOpen);
         game.listen(GameActivityEvents.DISABLE, this::onClose);
-        game.listen(GameActivityEvents.STATE_UPDATE, state -> state.canPlay(false));
 
         game.listen(GamePlayerEvents.OFFER, this::onPlayerOffer);
         game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, Vec3d.ZERO));
@@ -143,11 +143,11 @@ public class BDGameActivity<C extends BDGameConfig> {
                 this.canPlayerModify(player, pos));
         game.listen(BlockUseEvent.EVENT, (player, hand, hitResult) -> {
             var r = this.canPlayerModify(player, hitResult.getBlockPos());
-            if (r == EventResult.DENY) {
+            if (r == ActionResult.FAIL) {
                 var os = hitResult.getBlockPos().offset(hitResult.getSide());
-                return this.canPlayerModify(player, os).asActionResult();
+                return this.canPlayerModify(player, os);
             }
-            return r.asActionResult();
+            return r;
         });
         game.listen(EntityUseEvent.EVENT, (player, entity, hand, hitResult) ->
                 this.canPlayerModify(player, entity.getBlockPos()));
@@ -157,7 +157,7 @@ public class BDGameActivity<C extends BDGameConfig> {
             if (entity instanceof ServerPlayerEntity player) {
                 return this.canPlayerModify(player, pos);
             }
-            return EventResult.PASS;
+            return ActionResult.PASS;
         });
         game.listen(PlayerAttackEntityEvent.EVENT, (player, hand, attacked, hitResult) ->
                 this.canPlayerModify(player, attacked.getBlockPos()));
@@ -165,7 +165,7 @@ public class BDGameActivity<C extends BDGameConfig> {
             if (entity instanceof MobEntity mob) {
                 mob.setAiDisabled(true);
             }
-            return EventResult.PASS;
+            return ActionResult.PASS;
         });
 
         game.listen(ReplacePlayerChatEvent.EVENT, this::consumeChatMessage);
@@ -175,11 +175,8 @@ public class BDGameActivity<C extends BDGameConfig> {
     }
 
     protected void onOpen() {
-        for (var participant : this.gameSpace.getPlayers().participants()) {
+        for (var participant : this.gameSpace.getPlayers()) {
             this.spawnParticipant(participant);
-        }
-        for (var spectator : this.gameSpace.getPlayers().spectators()) {
-            this.spawnSpectator(spectator);
         }
     }
 
@@ -190,27 +187,24 @@ public class BDGameActivity<C extends BDGameConfig> {
     }
 
     protected JoinOfferResult onPlayerOffer(JoinOffer offer) {
-        return offer.acceptSpectators();
+        return offer.reject(Text.literal("In Progress"));
     }
 
     protected void addPlayer(ServerPlayerEntity player) {
-        if (!this.participants.containsKey(PlayerRef.of(player)) || this.gameSpace.getPlayers().spectators().contains(player)) {
-            this.spawnSpectator(player);
-        }
     }
 
     protected void removePlayer(ServerPlayerEntity player) {
         this.participants.remove(PlayerRef.of(player));
     }
 
-    protected EventResult canPlayerModify(ServerPlayerEntity player, BlockPos pos) {
+    protected ActionResult canPlayerModify(ServerPlayerEntity player, BlockPos pos) {
         var bdPlayer = participants.get(PlayerRef.of(player));
 
         if (bdPlayer != null && bdPlayer.currentRole != null && bdPlayer.currentRole.canModifyAt(pos)) {
-            return EventResult.PASS;
+            return ActionResult.PASS;
         }
 
-        return EventResult.DENY;
+        return ActionResult.FAIL;
     }
 
     private boolean consumeChatMessage(ServerPlayerEntity player, SignedMessage signedMessage, MessageType.Parameters parameters) {
@@ -227,19 +221,19 @@ public class BDGameActivity<C extends BDGameConfig> {
         return this.respawn.playerSafeArea();
     }
 
-    protected EventResult onPlayerDamage(ServerPlayerEntity player, DamageSource source, float amount) {
+    protected ActionResult onPlayerDamage(ServerPlayerEntity player, DamageSource source, float amount) {
         if (source.isIn(DamageTypeTags.IS_PLAYER_ATTACK) ||
                 source.isOf(DamageTypes.OUT_OF_WORLD) ||
                 source.isOf(DamageTypes.IN_WALL)) {
             this.spawnParticipant(player);
         }
 
-        return EventResult.DENY;
+        return ActionResult.FAIL;
     }
 
-    protected EventResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
+    protected ActionResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
         this.spawnParticipant(player);
-        return EventResult.DENY;
+        return ActionResult.FAIL;
     }
 
     protected void spawnParticipant(ServerPlayerEntity player) {

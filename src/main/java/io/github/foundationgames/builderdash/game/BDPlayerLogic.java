@@ -13,7 +13,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
 import org.jetbrains.annotations.Nullable;
 import xyz.nucleoid.map_templates.BlockBounds;
-import xyz.nucleoid.plasmid.api.game.GameSpace;
+import xyz.nucleoid.plasmid.game.GameSpace;
 
 import java.util.Set;
 
@@ -81,6 +81,6 @@ public class BDPlayerLogic {
         var disp = lookAt.subtract(x, 0, z);
 
         player.teleport(this.world, x, mpos.getY() + 0.1, z, Set.of(),
-                (float) Math.toDegrees(Math.atan2(-disp.getZ(), -disp.getX())) + 90, 0, true);
+                (float) Math.toDegrees(Math.atan2(-disp.getZ(), -disp.getX())) + 90, 0);
     }
 }

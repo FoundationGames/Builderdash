@@ -2,7 +2,7 @@ package io.github.foundationgames.builderdash.game.player;
 
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-import xyz.nucleoid.plasmid.api.util.PlayerRef;
+import xyz.nucleoid.plasmid.util.PlayerRef;
 
 public class BDPlayer {
     public final ServerWorld world;

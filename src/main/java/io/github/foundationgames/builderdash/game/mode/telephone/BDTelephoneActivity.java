@@ -26,11 +26,11 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import xyz.nucleoid.map_templates.BlockBounds;
-import xyz.nucleoid.plasmid.api.game.GameActivity;
-import xyz.nucleoid.plasmid.api.game.GameSpace;
-import xyz.nucleoid.plasmid.api.game.player.JoinOffer;
-import xyz.nucleoid.plasmid.api.game.player.JoinOfferResult;
-import xyz.nucleoid.plasmid.api.util.PlayerRef;
+import xyz.nucleoid.plasmid.game.GameActivity;
+import xyz.nucleoid.plasmid.game.GameSpace;
+import xyz.nucleoid.plasmid.game.player.JoinOffer;
+import xyz.nucleoid.plasmid.game.player.JoinOfferResult;
+import xyz.nucleoid.plasmid.util.PlayerRef;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
