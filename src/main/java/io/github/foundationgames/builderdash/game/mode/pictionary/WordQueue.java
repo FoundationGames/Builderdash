@@ -27,7 +27,7 @@ public record WordQueue(WordList list, Deque<String[]> queue) {
         return queue().removeFirst();
     }
 
-    public static int levenshteinRecursive(String a, String b) {
+    public static int levenshtein(String a, String b) {
         int[][] matrix = new int[a.length() + 1][b.length() + 1];
 
         for (int i = 0; i <= a.length(); i++) matrix[i][0] = i;
@@ -58,7 +58,7 @@ public record WordQueue(WordList list, Deque<String[]> queue) {
         for (var alias : word) {
             var normAlias = alias.replaceAll(NON_ALPHANUM,"")
                     .toLowerCase(Locale.ROOT);
-            int dist = levenshteinRecursive(normAlias, normGuess);
+            int dist = levenshtein(normAlias, normGuess);
             if (dist < min) {
                 min = dist;
             }

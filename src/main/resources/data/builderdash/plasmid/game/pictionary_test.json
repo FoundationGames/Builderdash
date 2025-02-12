@@ -18,5 +18,6 @@
   "max_build_time": 180,
   "min_build_time": 15,
   "time_depletion": 0.3,
+  "double_rounds": false,
   "guess_closeness": 2
 }

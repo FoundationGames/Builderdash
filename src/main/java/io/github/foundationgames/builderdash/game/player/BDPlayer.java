@@ -28,7 +28,12 @@ public class BDPlayer {
         }
 
         this.currentRole = role;
-        this.player.ifOnline(this.world, s -> s.changeGameMode(role.getGameMode()));
+        this.player.ifOnline(this.world, s -> {
+            var m = role.getGameMode();
+            if (s.interactionManager.getGameMode() != m) {
+                s.changeGameMode(m);
+            }
+        });
         role.init();
     }
 

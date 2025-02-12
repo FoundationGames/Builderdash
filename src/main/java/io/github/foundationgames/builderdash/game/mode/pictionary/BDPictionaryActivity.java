@@ -1,6 +1,9 @@
 package io.github.foundationgames.builderdash.game.mode.pictionary;
 
+import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
 import io.github.foundationgames.builderdash.game.BDGameActivity;
+import io.github.foundationgames.builderdash.game.element.display.GenericContent;
+import io.github.foundationgames.builderdash.game.element.display.InWorldDisplay;
 import io.github.foundationgames.builderdash.game.map.BuildZone;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
 import io.github.foundationgames.builderdash.game.map.PrivateBuildZoneManager;
@@ -9,6 +12,7 @@ import io.github.foundationgames.builderdash.game.mode.pictionary.role.Pictionar
 import io.github.foundationgames.builderdash.game.mode.pictionary.ui.ChooseWordGui;
 import io.github.foundationgames.builderdash.game.player.BDPlayer;
 import io.github.foundationgames.builderdash.game.player.PlayerRole;
+import io.github.foundationgames.builderdash.game.sound.SFX;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
@@ -30,9 +34,11 @@ import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
     public static final Text IS_CHOOSING_WORD = Text.translatable("title.builderdash.pictionary.is_choosing_word").formatted(Formatting.GOLD);
+    public static final Text IS_BUILDING = Text.translatable("label.builderdash.pictionary.is_building").formatted(Formatting.GOLD);
     public static final Text WORD_CHOSEN = Text.translatable("title.builderdash.pictionary.word_chosen").formatted(Formatting.AQUA);
     public static final Text WAS_THE_WORD = Text.translatable("title.builderdash.pictionary.was_the_word").formatted(Formatting.YELLOW);
     public static final Text GUESS_IN_CHAT = Text.translatable("message.builderdash.pictionary.guess_in_chat").formatted(Formatting.GOLD);
@@ -48,6 +54,7 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
     public @Nullable String[] currentWord;
     private PlayerRef currentBuilder;
     private ChooseWordGui chooseWordGui = null;
+    private InWorldDisplay currentDisplay = null;
 
     public final IntList hiddenChars = new IntArrayList();
     public int revealedChars = -1;
@@ -70,6 +77,10 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
 
         var shuffledPlayers = new ArrayList<>(this.participants.keySet());
         Collections.shuffle(shuffledPlayers);
+
+        if (config.doubleRounds()) {
+            shuffledPlayers.addAll(shuffledPlayers);
+        }
 
         this.upcomingBuilders = new ArrayDeque<>(shuffledPlayers);
         this.privateBuildZones = new PrivateBuildZoneManager(world, map.singleZone, map.buildZonesStart, 1 + (int)Math.sqrt(this.participants.size()));
@@ -106,6 +117,10 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
 
         notYetGuessed.remove(player.player);
         player.score += award;
+
+        this.animations.add(SFX.PICTIONARY_CORRECT.play(this.world, player.player));
+        this.animations.add(SFX.PICTIONARY_OTHER_PLAYER_GUESSED.play(this.world,
+                this.participants.values().stream().filter(p -> p != player).map(p -> p.player).collect(Collectors.toList())));
 
         if (player.currentRole instanceof PictionaryGuesserRole role) {
             role.alreadyGuessed = true;
@@ -154,6 +169,8 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
                 if (charsToReveal != this.revealedChars) {
                     this.revealedChars = charsToReveal;
                     this.hintText = this.generateHintText();
+
+                    this.updateDisplay();
                 }
 
                 if (this.hintText != null) for (var player : this.participants.values()) {
@@ -207,6 +224,49 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
         return Text.translatable(HINT, Text.literal(builder.toString())).formatted(Formatting.YELLOW);
     }
 
+    private void updateDisplay() {
+        if (this.currentDisplay == null) {
+            return;
+        }
+
+        switch (this.phase) {
+            case BUILDING, CHOOSE_WORD -> {
+                Text builderName = Text.empty();
+                var builder = this.currentBuilder.getEntity(this.gameSpace);
+                if (builder != null) {
+                    builderName = Text.literal(builder.getNameForScoreboard()).formatted(Formatting.YELLOW);
+                }
+
+                var content = GenericContent.builder()
+                        .addTop(builderName, 1, 8)
+                        .addTop(this.phase == Phase.BUILDING ? IS_BUILDING : IS_CHOOSING_WORD, 1, 5);
+
+                if (this.hintText != null && this.currentWord.length > 0 && this.currentWord[0] != null) {
+                    float scale = (float) (((this.currentDisplay.sizeX - 0.75) * GenericContent.WIDTH_PER_BLOCK) / ((this.currentWord[0].length() * 6.2) + 30));
+                    if (scale > 7) {
+                        scale = 7;
+                    }
+
+                    content.addBottom(this.hintText, 1, scale);
+                }
+
+                this.currentDisplay.setContent(content.build());
+            }
+        }
+    }
+
+    private void changeCurrentDisplay(InWorldDisplay display) {
+        if (this.currentDisplay != null) {
+            this.currentDisplay.clear();
+            if (this.currentDisplay.getAttachment() != null) {
+                this.currentDisplay.getAttachment().destroy();
+            }
+        }
+
+        this.currentDisplay = display;
+        ChunkAttachment.of(this.currentDisplay, this.world, display.getPos());
+    }
+
     private void checkBuilderOnline() {
         if (this.currentBuilder != null && !this.currentBuilder.isOnline(this.gameSpace)) {
             currPlayerRevealWord();
@@ -250,14 +310,13 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
         this.timeToPhaseChange = this.config.wordChooseTime() * SEC;
         this.totalTime = this.timeToPhaseChange;
 
-        if (this.timerBar != null) {
-            this.widgets.removeWidget(this.timerBar);
-        }
-
-        this.timerBar = this.widgets.addBossBar(Text.empty(), BossBar.Color.YELLOW, BossBar.Style.NOTCHED_6);
+        this.setTimerBar(BossBar.Color.YELLOW, BossBar.Style.NOTCHED_6);
 
         var buildZone = this.privateBuildZones.requestNewBuildZone();
-        this.respawn = buildZone.buildSafeArea();
+        this.respawn = buildZone;
+
+        this.changeCurrentDisplay(buildZone.displays()[0]);
+        this.updateDisplay();
 
         this.notYetGuessed.clear();
         for (var bdPlayer : this.participants.values()) {
@@ -292,6 +351,8 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
             }
         };
         this.chooseWordGui.open();
+
+        this.animations.add(SFX.PICTIONARY_NEW_ROUND.play(this.world));
     }
 
     public void setCurrentWord(String[] word) {
@@ -332,11 +393,10 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
             }
         }
 
-        if (this.timerBar != null) {
-            this.widgets.removeWidget(this.timerBar);
-        }
+        this.setTimerBar(BossBar.Color.BLUE, BossBar.Style.NOTCHED_20);
+        updateDisplay();
 
-        this.timerBar = this.widgets.addBossBar(Text.empty(), BossBar.Color.BLUE, BossBar.Style.NOTCHED_20);
+        this.animations.add(SFX.PICTIONARY_START_GUESSING.play(this.world));
     }
 
     public void currPlayerRevealWord() {
@@ -347,10 +407,22 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
         this.totalTime = this.timeToPhaseChange;
 
         if (this.currentWord != null && this.currentWord.length > 0 && this.currentWord[0] != null) {
+            var wordText = Text.literal(this.currentWord[0]).formatted(Formatting.GREEN);
+
             this.gameSpace.getPlayers().showTitle(
-                    Text.literal(this.currentWord[0]).formatted(Formatting.GREEN),
+                    wordText,
                     WAS_THE_WORD,
                     5, 6 * SEC, 0
+            );
+
+            float scale = (float) (((this.currentDisplay.sizeX - 0.75) * GenericContent.WIDTH_PER_BLOCK) / (this.currentWord[0].length() * 6.2));
+            if (scale > 9) {
+                scale = 9;
+            }
+            this.currentDisplay.setContent(GenericContent.builder()
+                    .addTop(wordText, 1, scale)
+                    .addTop(WAS_THE_WORD, 1, 5)
+                    .build()
             );
         }
 
@@ -359,12 +431,10 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
             player.updateRole(new PlayerRole.Flying(this.world, player));
         }
 
-        if (this.timerBar != null) {
-            this.widgets.removeWidget(this.timerBar);
-            this.timerBar = null;
-        }
-
+        this.removeTimerBar();
         this.promptText = Text.empty();
+
+        this.animations.add(SFX.PICTIONARY_WORD_REVEAL.play(this.world));
     }
 
     public void displayWin() {
@@ -386,29 +456,12 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
             return;
         }
 
-        this.respawn = winnerZone.buildSafeArea();
-
-        for (var player : this.participants.values()) {
-            player.updateRole(new PlayerRole.Flying(this.world, player));
-            player.player.ifOnline(this.gameSpace, this::spawnParticipant);
-        }
-
-        this.gameSpace.getPlayers().showTitle(
-                winner.displayName().copy().formatted(Formatting.AQUA, Formatting.BOLD), WON_THE_GAME, 10, 10 * SEC, 10
-        );
+        this.openWinArea(winner, winnerZone);
     }
 
     public void updateScoreboard() {
-        var players = new ArrayList<>(this.participants.values());
-        players.sort(Collections.reverseOrder(Comparator.comparingInt(p -> p.score)));
-        var lines = players.stream().map(p ->
-                Text.literal(Integer.toString(p.score)).formatted(Formatting.AQUA)
-                        .append(Text.literal(" - ").formatted(Formatting.GRAY))
-                        .append(p.displayName())
-        ).toArray(Text[]::new);
-
         this.scoreboard.clearLines();
-        this.scoreboard.addLines(lines);
+        this.scoreboard.addLines(this.createScoresForScoreboard());
     }
 
     public enum Phase {

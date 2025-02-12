@@ -4,6 +4,7 @@ import io.github.foundationgames.builderdash.game.mode.pictionary.BDPictionaryAc
 import io.github.foundationgames.builderdash.game.mode.pictionary.WordQueue;
 import io.github.foundationgames.builderdash.game.player.BDPlayer;
 import io.github.foundationgames.builderdash.game.player.PlayerRole;
+import io.github.foundationgames.builderdash.game.sound.SFX;
 import net.minecraft.network.message.MessageType;
 import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.world.ServerWorld;
@@ -45,6 +46,7 @@ public class PictionaryGuesserRole extends PlayerRole.Flying {
                             s.sendMessage(Text.translatable(GUESS_IS_CLOSE_KEY, guess)
                                     .formatted(Formatting.YELLOW, Formatting.ITALIC))
                     );
+                    pictionary.animations.add(SFX.PICTIONARY_CLOSE_GUESS.play(this.world, this.player.player));
                 }
 
                 return false;

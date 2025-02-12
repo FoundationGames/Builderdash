@@ -20,6 +20,9 @@ public record BuilderdashMapConfig(int time, Identifier mapId) {
             ).apply(inst, BuilderdashMapConfig::new)
     );
 
+    public static final String[] SINGLE_DISPLAY = {"display_singlezone"};
+    public static final String[] DOUBLE_DISPLAY = {"display_doublezone_1", "display_doublezone_2"};
+
     public BuilderdashMap buildMap(MinecraftServer server) throws GameOpenException {
         MapTemplate template;
         try {
@@ -31,9 +34,9 @@ public record BuilderdashMapConfig(int time, Identifier mapId) {
         var spawnRegion = BDUtil.regionOrThrow(mapId(), template, "spawn");
         var buildZonesStart = BDUtil.regionOrThrow(mapId(), template, "build_zones_start");
 
-        var privateZoneTemplate = BuildZone.get(mapId(), template, "privatezone");
-        var singleZone = BuildZone.get(mapId(), template, "singlezone");
-        var doubleZone = BuildZone.get(mapId(), template, "doublezone");
+        var privateZoneTemplate = BuildZone.get(mapId(), template, "privatezone", new String[0]);
+        var singleZone = BuildZone.get(mapId(), template, "singlezone", SINGLE_DISPLAY);
+        var doubleZone = BuildZone.get(mapId(), template, "doublezone", DOUBLE_DISPLAY);
 
         return new BuilderdashMap(template, this, spawnRegion.getBounds(), buildZonesStart.getBounds().min(), privateZoneTemplate, singleZone, doubleZone);
     }

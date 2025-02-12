@@ -1,12 +1,15 @@
 package io.github.foundationgames.builderdash;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import io.github.foundationgames.builderdash.game.BDCustomWordsConfig;
 import io.github.foundationgames.builderdash.game.BDLobbyActivity;
+import io.github.foundationgames.builderdash.game.CustomWordsPersistentState;
 import io.github.foundationgames.builderdash.game.mode.pictionary.BDPictionaryConfig;
-import io.github.foundationgames.builderdash.game.mode.pictionary.CustomWordsPersistentState;
 import io.github.foundationgames.builderdash.game.mode.pictionary.PictionaryCommand;
 import io.github.foundationgames.builderdash.game.mode.telephone.BDTelephoneConfig;
 import io.github.foundationgames.builderdash.game.mode.telephone.TelephoneCommand;
+import io.github.foundationgames.builderdash.game.mode.versus.BDVersusConfig;
+import io.github.foundationgames.builderdash.game.mode.versus.VersusCommand;
 import io.github.foundationgames.builderdash.tools.BDToolsItems;
 import io.github.foundationgames.builderdash.tools.BDToolsState;
 import net.fabricmc.api.ModInitializer;
@@ -43,6 +46,13 @@ public class Builderdash implements ModInitializer {
             BDLobbyActivity::open
     );
 
+    public static final GameType<BDVersusConfig> VERSUS = GameType.register(
+            id("versus"),
+            BDVersusConfig.CODEC,
+            BDLobbyActivity::open
+    );
+
+    @SuppressWarnings("unchecked")
     public static int openBuilderdashGame(ServerCommandSource cmd, Identifier gameConfigId) {
         var server = cmd.getServer();
         var key = RegistryKey.of(GameConfigs.REGISTRY_KEY, gameConfigId);
@@ -56,9 +66,9 @@ public class Builderdash implements ModInitializer {
 
         var value = configEntry.value();
         if (value != null) {
-            if (value.config() instanceof BDPictionaryConfig pictionary) {
-                value = new GameConfig<>(PICTIONARY, null, null, null, null, CustomValuesConfig.empty(),
-                        pictionary.withCustomWords(CustomWordsPersistentState.get(server)));
+            if (value.config() instanceof BDCustomWordsConfig<?> config) {
+                value = new GameConfig<>((GameType<Object>) value.type(), null, null, null, null, CustomValuesConfig.empty(),
+                        config.withCustomWords(CustomWordsPersistentState.get(server, CustomWordsPersistentState.PICTIONARY_KEY)));
             }
 
             // TODO: Handle errors?
@@ -87,6 +97,7 @@ public class Builderdash implements ModInitializer {
         return command
                 .then(PictionaryCommand.createCommand(CommandManager.literal("pictionary")))
                 .then(TelephoneCommand.createCommand(CommandManager.literal("telephone")))
+                .then(VersusCommand.createCommand(CommandManager.literal("versus")))
                 .then(CommandManager.literal("toolbox").executes(ctx -> {
                     var player = ctx.getSource().getPlayer();
                     BDToolsState.get(player).openToolbox(player);

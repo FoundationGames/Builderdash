@@ -24,12 +24,12 @@ public class GalleryReviewGui extends HotbarGui {
 
         this.setSlot(0, new GuiElementBuilder().setItem(Items.TIPPED_ARROW)
                 .setComponent(DataComponentTypes.POTION_CONTENTS, new PotionContentsComponent(Potions.HEALING))
-                .setItemName(VIEW_PREVIOUS).glow().setCallback(clickType -> this.telephone.galleryReviewPrevious()));
+                .setName(VIEW_PREVIOUS).glow().setCallback(clickType -> this.telephone.galleryReviewPrevious()));
         this.setSlot(1, new GuiElementBuilder().setItem(Items.TIPPED_ARROW)
                 .setComponent(DataComponentTypes.POTION_CONTENTS, new PotionContentsComponent(Potions.LUCK))
-                .setItemName(VIEW_NEXT).glow().setCallback(clickType -> this.telephone.galleryReviewNext()));
+                .setName(VIEW_NEXT).glow().setCallback(clickType -> this.telephone.galleryReviewNext()));
         this.setSlot(2, new GuiElementBuilder().setItem(Items.FIELD_MASONED_BANNER_PATTERN)
-                .setItemName(END_GALLERY).glow().setCallback(clickType -> this.telephone.galleryContinue()));
+                .setName(END_GALLERY).glow().setCallback(clickType -> this.telephone.galleryContinue()));
     }
 
     @Override

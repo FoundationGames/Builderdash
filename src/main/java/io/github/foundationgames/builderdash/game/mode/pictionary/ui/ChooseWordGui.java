@@ -34,7 +34,7 @@ public class ChooseWordGui extends SimpleGui {
 
     private void addWordItem(int index, String[] word) {
         this.setSlot(WORD_IDX_TO_SLOT_ID[index], new GuiElementBuilder(Items.BOOK)
-                .setItemName(Text.literal(word[0]))
+                .setName(Text.literal(word[0])).glow()
                 .setCallback(clickType -> this.wordChosen(word)));
     }
 

@@ -7,6 +7,7 @@ import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
@@ -50,7 +51,7 @@ public class BDPlayerLogic {
         ));
     }
 
-    public void spawnPlayer(ServerPlayerEntity player, BlockBounds bounds) {
+    public void spawnPlayer(ServerPlayerEntity player, BlockBounds bounds, Vec3d lookAt) {
         var random = player.getRandom();
 
         var minPos = bounds.min();
@@ -64,6 +65,22 @@ public class BDPlayerLogic {
         float x = pos.getX() + MathHelper.nextFloat(player.getRandom(), -0.5f, 0.5f);
         float z = pos.getZ() + MathHelper.nextFloat(player.getRandom(), -0.5f, 0.5f);
 
-        player.teleport(this.world, x, pos.getY() + 1.5, z, Set.of(), 0.0F, 0.0F, true);
+        var mpos = new BlockPos.Mutable();
+        mpos.set(pos);
+        for (int i = 0; i < 72; i++) {
+            if (!world.getBlockState(mpos).shouldSuffocate(world, mpos)) {
+                mpos.move(Direction.UP);
+                if (!world.getBlockState(mpos).shouldSuffocate(world, mpos)) {
+                    break;
+                }
+            }
+
+            mpos.move(Direction.UP);
+        }
+
+        var disp = lookAt.subtract(x, 0, z);
+
+        player.teleport(this.world, x, mpos.getY() + 0.1, z, Set.of(),
+                (float) Math.toDegrees(Math.atan2(-disp.getZ(), -disp.getX())) + 90, 0, true);
     }
 }

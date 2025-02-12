@@ -18,7 +18,7 @@ public class GalleryControlGui extends HotbarGui {
         this.telephone = telephone;
 
         this.setSlot(0, new GuiElementBuilder().setItem(Items.GLOBE_BANNER_PATTERN)
-                .setItemName(CONTINUE).glow().setCallback(clickType -> this.telephone.galleryContinue()));
+                .setName(CONTINUE).glow().setCallback(clickType -> this.telephone.galleryContinue()));
     }
 
     @Override

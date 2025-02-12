@@ -1,7 +1,11 @@
 package io.github.foundationgames.builderdash.game.mode.telephone;
 
+import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
 import io.github.foundationgames.builderdash.BDUtil;
 import io.github.foundationgames.builderdash.game.BDGameActivity;
+import io.github.foundationgames.builderdash.game.element.TickingAnimation;
+import io.github.foundationgames.builderdash.game.element.display.GenericContent;
+import io.github.foundationgames.builderdash.game.element.display.InWorldDisplay;
 import io.github.foundationgames.builderdash.game.map.BuildZone;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
 import io.github.foundationgames.builderdash.game.map.PrivateBuildZoneManager;
@@ -11,6 +15,8 @@ import io.github.foundationgames.builderdash.game.mode.telephone.role.TelephoneG
 import io.github.foundationgames.builderdash.game.mode.telephone.role.TelephonePromptWritingRole;
 import io.github.foundationgames.builderdash.game.player.BDPlayer;
 import io.github.foundationgames.builderdash.game.player.PlayerRole;
+import io.github.foundationgames.builderdash.game.sound.SFX;
+import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -29,7 +35,6 @@ import xyz.nucleoid.plasmid.api.util.PlayerRef;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -38,13 +43,11 @@ import java.util.Set;
 public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
     public static final Text WRITE_START_PROMPT = Text.translatable("title.builderdash.telephone.write_start_prompt").formatted(Formatting.GOLD);
     public static final Text GUESS_THIS_BUILD = Text.translatable("title.builderdash.pictionary.guess_this_build").formatted(Formatting.AQUA);
-    public static final Text BUILD_PROMPT = Text.translatable("title.builderdash.telephone.build_prompt").formatted(Formatting.GREEN);
     public static final Text PROMPT_IN_CHAT = Text.translatable("message.builderdash.telephone.prompt_in_chat").formatted(Formatting.YELLOW);
     public static final Text GUESS_IN_CHAT = Text.translatable("message.builderdash.telephone.guess_in_chat").formatted(Formatting.YELLOW);
-    public static final Text TYPE_DONE_1 = Text.translatable("label.builderdash.pictionary.type_done_1").formatted(Formatting.LIGHT_PURPLE);
-    public static final Text TYPE_DONE_2 = Text.translatable("label.builderdash.pictionary.type_done_2").formatted(Formatting.LIGHT_PURPLE);
 
     public static final String PLAYER_S = "title.builderdash.telephone.player_s";
+    public static final String PLAYER_SAID = "label.builderdash.telephone.player_said";
     public static final String GALLERY_SUBTITLE = "title.builderdash.telephone.gallery";
     public static final String PROMPT_WRITING_LABEL = "label.builderdash.telephone.prompt_writing";
     public static final String BUILDING_LABEL = "label.builderdash.telephone.building";
@@ -75,11 +78,12 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
 
     private final PrivateBuildZoneManager privateBuildZones;
     private BuildZone emptyBuildZone = null;
-    private final Deque<BuildZone.AnimatedCopy> animationQueue = new ArrayDeque<>();
 
     private int galleryCurrentSeries = 0;
     private int galleryCurrentRound = 0;
     private int galleryReviewCurrentBuild;
+
+    private boolean allowGalleryContinue = true;
 
     protected BDTelephoneActivity(GameSpace space, GameActivity game, ServerWorld world, BuilderdashMap map, BDTelephoneConfig config) {
         super(space, game, world, map, config);
@@ -183,7 +187,7 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
     }
 
     public void galleryContinue() {
-        if (this.animationQueue.size() > 0) {
+        if (!allowGalleryContinue) {
             return;
         }
 
@@ -223,8 +227,13 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
 
             var build = this.buildRounds.get(buildNumber)[this.galleryCurrentSeries];
 
-            this.animationQueue.addLast(this.emptyBuildZone.makeCopyAnimation(this.gameMap.singleZone, true, 1));
-            this.animationQueue.addLast(build.build.makeCopyAnimation(this.gameMap.singleZone, false, 2));
+            this.animations.add(TickingAnimation.sequence(
+                    TickingAnimation.instant(w -> this.allowGalleryContinue = false),
+                    this.emptyBuildZone.makeCopyAnimation(this.gameMap.singleZone, true, 1),
+                    build.build.makeCopyAnimation(this.gameMap.singleZone, false, 2),
+                    TickingAnimation.instant(w -> this.allowGalleryContinue = true),
+                    SFX.BUILD_REVEAL.play(this.world)
+            ));
 
             build.builder.ifOnline(this.gameSpace, s ->
                     this.gameSpace.getPlayers().sendMessage(
@@ -254,13 +263,16 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
                                 Text.translatable(tKey, s.getDisplayName(), prompt)
                                         .formatted(Formatting.AQUA, Formatting.ITALIC)));
             }
+
+            this.animations.add(SFX.TELEPHONE_GALLERY_REVEAL_PROMPT.play(this.world));
         }
 
+        this.updateRevealGalleryDisplay(this.galleryCurrentRound, this.galleryCurrentSeries);
         this.updateScoreboard();
     }
 
     public void galleryReviewPrevious() {
-        if (this.animationQueue.size() > 0) {
+        if (!allowGalleryContinue) {
             return;
         }
 
@@ -268,10 +280,12 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
             this.galleryReviewCurrentBuild--;
             this.galleryReviewSet(this.galleryReviewCurrentBuild);
         }
+
+        this.animations.add(SFX.TELEPHONE_GALLERY_FLIP.play(this.world, -2));
     }
 
     public void galleryReviewNext() {
-        if (this.animationQueue.size() > 0) {
+        if (!allowGalleryContinue) {
             return;
         }
 
@@ -279,9 +293,16 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
             this.galleryReviewCurrentBuild++;
             this.galleryReviewSet(this.galleryReviewCurrentBuild);
         }
+
+        this.animations.add(SFX.TELEPHONE_GALLERY_FLIP.play(this.world, 2));
     }
 
     public void galleryReviewSet(int buildNumber) {
+        var disp = this.gameMap.singleZone.displays()[0];
+        var content = GenericContent.builder();
+
+        this.appendGalleryOwnerName(content, this.initialPrompts[this.galleryCurrentSeries].prompter);
+
         var build = this.buildRounds.get(buildNumber)[this.galleryCurrentSeries];
         var sliceCount = build.build.buildSafeArea().size().getY();
 
@@ -290,7 +311,7 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
         }
 
         var br = this.buildRounds.get(buildNumber)[this.galleryCurrentSeries];
-        final String prompt, guess = br.guess;
+        final String prompt, guess = Objects.requireNonNullElse(br.guess, "(empty)");
 
         final PlayerRef prompter, guesser = br.guesser, builder = br.builder;
 
@@ -304,24 +325,20 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
             prompter = prevBr.guesser;
         }
 
+        if (guesser != null) {
+            this.appendPlayerPrompt(disp, content, guesser, guess, 2, 5.75f);
+        }
+
         builder.ifOnline(this.gameSpace, s ->
-                this.gameSpace.getPlayers().sendMessage(
-                        Text.translatable(PLAYERS_BUILD, s.getDisplayName())
-                                .formatted(Formatting.YELLOW, Formatting.UNDERLINE)));
+                content.addBottom(
+                        Text.translatable(PLAYERS_BUILD, s.getDisplayName()).formatted(Formatting.GOLD, Formatting.ITALIC),
+                        1, 4.75f));
 
         if (prompter != null) {
-            prompter.ifOnline(this.gameSpace, s ->
-                    this.gameSpace.getPlayers().sendMessage(
-                            Text.translatable(PLAYERS_PROMPT, s.getDisplayName(), prompt)
-                                    .formatted(Formatting.GRAY)));
+            this.appendPlayerPrompt(disp, content, prompter, prompt, 2, 5.75f);
         }
 
-        if (guesser != null) {
-            guesser.ifOnline(this.gameSpace, s ->
-                    this.gameSpace.getPlayers().sendMessage(
-                            Text.translatable(PLAYERS_GUESS, s.getDisplayName(), guess)
-                                    .formatted(Formatting.GRAY)));
-        }
+        disp.setContent(content.build());
     }
 
     @Override
@@ -348,14 +365,6 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
         if (this.playersReadyToContinue.size() >= this.indexedPlayers.size()) {
             this.nextPhase();
         }
-
-        if (this.animationQueue.size() > 0) {
-            boolean hasNext = this.animationQueue.getFirst().tick(this.world);
-
-            if (!hasNext) {
-                this.animationQueue.removeFirst();
-            }
-        }
     }
 
     @Override
@@ -374,7 +383,7 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
         this.timerBar = this.widgets.addBossBar(Text.empty(), BossBar.Color.YELLOW, BossBar.Style.NOTCHED_6);
 
         this.playersReadyToContinue.clear();
-        this.respawn = gameMap.singleZone.buildSafeArea();
+        this.respawn = gameMap.singleZone;
 
         for (int i = 0; i < initialPrompts.length; i++) {
             var prompt = initialPrompts[i];
@@ -391,6 +400,7 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
         );
         this.gameSpace.getPlayers().sendMessage(PROMPT_IN_CHAT);
 
+        this.animations.add(SFX.TELEPHONE_START.play(this.world));
         this.updateScoreboard();
     }
 
@@ -402,16 +412,13 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
             return;
         }
 
-        if (this.timerBar != null) {
-            this.widgets.removeWidget(this.timerBar);
-        }
-
         this.currentlyAssignedZones.clear();
         this.phase = Phase.BUILDING;
         this.timeToPhaseChange = this.config.buildTime() * SEC;
         this.totalTime = this.timeToPhaseChange;
-        this.timerBar = this.widgets.addBossBar(Text.empty(), BossBar.Color.BLUE, BossBar.Style.NOTCHED_20);
         this.playersReadyToContinue.clear();
+
+        this.setTimerBar(BossBar.Color.BLUE, BossBar.Style.NOTCHED_20);
 
         int buildNumber = ((this.currentRound + 1) / 2) - 1;
 
@@ -420,6 +427,17 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
             var build = builds[i];
             build.build = privateBuildZones.requestNewBuildZone();
             this.currentlyAssignedZones.put(build.builder, build.build);
+
+            if (build.build.displays().length > 0) {
+                var disp = build.build.displays()[0];
+
+                disp.setContent(GenericContent.builder()
+                        .addTop(BUILD_PROMPT, 1)
+                        .addTop(Text.translatable(QUOTE, getPromptFor(buildNumber, i)).formatted(Formatting.AQUA), 1, 6)
+                        .build());
+
+                ChunkAttachment.of(disp, this.world, disp.getPos());
+            }
 
             var player = this.getDataFor(build.builder);
             if (player != null) {
@@ -433,7 +451,57 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
                 Text.empty(), BUILD_PROMPT, 10, 5 * SEC, 10
         );
 
+        this.animations.add(SFX.TELEPHONE_BUILD.play(this.world));
         this.updateScoreboard();
+    }
+
+    private void updateRevealGalleryDisplay(int round, int series) {
+        var disp = this.gameMap.singleZone.displays()[0];
+        var content = GenericContent.builder();
+
+        this.appendGalleryOwnerName(content, this.initialPrompts[series].prompter);
+
+        if (round >= 0) {
+            boolean hasBuild = round % 2 == 1;
+            int buildNumber = (round / 2);
+
+            if (hasBuild) {
+                var build = this.buildRounds.get(buildNumber)[series];
+
+                build.builder.ifOnline(this.gameSpace, s ->
+                        content.addBottom(Text.translatable(PLAYERS_BUILD, s.getDisplayName()).formatted(Formatting.GOLD, Formatting.ITALIC),
+                                1, 4.75f));
+            }
+
+            var pi = getPromptInfoFor(buildNumber, series);
+            appendPlayerPrompt(disp, content, pi.left(), pi.right(), 3, 7);
+        }
+
+        disp.setContent(content.build());
+    }
+
+    private void appendGalleryOwnerName(GenericContent.Builder content, PlayerRef owner) {
+        owner.ifOnline(this.gameSpace, s -> content
+                .addTop(
+                        Text.translatable(PLAYER_S, s.getDisplayName()).formatted(Formatting.LIGHT_PURPLE)
+                                .append(" ")
+                                .append(Text.translatable(GALLERY_SUBTITLE)).formatted(Formatting.LIGHT_PURPLE, Formatting.UNDERLINE),
+                        1, 4.5f));
+    }
+
+    private void appendPlayerPrompt(InWorldDisplay display, GenericContent.Builder content, PlayerRef player, String prompt, int maxLines, float maxScale) {
+        var pe = player.getEntity(this.world);
+
+        if (pe == null) {
+            return;
+        }
+
+        float scale = (float) (((display.sizeX - 0.75) * GenericContent.WIDTH_PER_BLOCK) /
+                ((prompt.length() + 2 + pe.getNameForScoreboard().length()) * 6.2));
+        int lines = Math.min(maxLines, (int) Math.max(1, Math.floor((maxScale / (maxLines + 1)) / scale)));
+        scale = Math.min(scale * lines, maxScale);
+
+        content.addBottom(Text.translatable(PLAYER_SAID, pe.getNameForScoreboard(), prompt).formatted(Formatting.AQUA), lines, scale);
     }
 
     public void beginGuessingOrGoToGallery() {
@@ -444,22 +512,27 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
             return;
         }
 
-        if (this.timerBar != null) {
-            this.widgets.removeWidget(this.timerBar);
-        }
-
         this.currentlyAssignedZones.clear();
         this.phase = Phase.GUESSING;
         this.timeToPhaseChange = this.config.guessTime() * SEC;
         this.totalTime = this.timeToPhaseChange;
-        this.timerBar = this.widgets.addBossBar(Text.empty(), BossBar.Color.YELLOW, BossBar.Style.NOTCHED_6);
         this.playersReadyToContinue.clear();
+
+        this.setTimerBar(BossBar.Color.YELLOW, BossBar.Style.NOTCHED_6);
 
         int buildNumber = ((this.currentRound + 1) / 2) - 1;
 
         var builds = this.buildRounds.get(buildNumber);
         for (int i = 0; i < builds.length; i++) {
             var build = builds[i];
+
+            if (build.build.displays().length > 0) {
+                var disp = build.build.displays()[0];
+
+                disp.setContent(GenericContent.builder()
+                        .addTop(GUESS_THIS_BUILD, 1, 7)
+                        .build());
+            }
 
             if (build.guesser == null) {
                 continue;
@@ -482,14 +555,20 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
         this.gameSpace.getPlayers().forEach(s ->
                 s.sendMessageToClient(Text.empty(), true));
 
+        this.animations.add(SFX.TELEPHONE_GUESS.play(this.world));
         this.updateScoreboard();
     }
 
     public void startGalleryFor(int seriesIndex) {
+        var disp = this.gameMap.singleZone.displays()[0];
+        if (disp.getAttachment() == null) {
+            ChunkAttachment.of(disp, this.world, disp.getPos());
+        }
+
         this.phase = Phase.GALLERY;
         this.currentlyAssignedZones.clear();
         this.playersReadyToContinue.clear();
-        this.respawn = this.gameMap.singleZone.buildSafeArea();
+        this.respawn = this.gameMap.singleZone;
 
         if (this.emptyBuildZone == null) {
             this.emptyBuildZone = this.privateBuildZones.requestNewBuildZone();
@@ -497,11 +576,7 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
 
         this.emptyBuildZone.copyBuild(this.world, this.gameMap.singleZone.buildSafeArea().min());
 
-        if (this.timerBar != null) {
-            this.widgets.removeWidget(this.timerBar);
-            this.timerBar = null;
-        }
-
+        this.removeTimerBar();
         this.timeToPhaseChange = Integer.MAX_VALUE;
         this.totalTime = this.timeToPhaseChange;
 
@@ -535,6 +610,8 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
         this.gameSpace.getPlayers().forEach(s ->
                 s.sendMessageToClient(Text.empty(), true));
 
+        this.animations.add(SFX.TELEPHONE_GALLERY_OPEN.play(this.world, 8));
+        this.updateRevealGalleryDisplay(this.galleryCurrentRound, this.galleryCurrentSeries);
         this.updateScoreboard();
     }
 
@@ -630,6 +707,16 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
 
             buildNumber--;
         }
+    }
+
+    private Pair<PlayerRef, String> getPromptInfoFor(int buildNumber, int seriesIndex) {
+        if (buildNumber <= 0) {
+            var ip = this.initialPrompts[seriesIndex];
+            return Pair.of(ip.prompter, Objects.requireNonNullElse(ip.prompt, "(empty)"));
+        }
+
+        var bg = this.buildRounds.get(buildNumber - 1)[seriesIndex];
+        return Pair.of(bg.guesser, Objects.requireNonNullElse(bg.guess, "(empty)"));
     }
 
     private BDPlayer getDataFor(PlayerRef ref) {

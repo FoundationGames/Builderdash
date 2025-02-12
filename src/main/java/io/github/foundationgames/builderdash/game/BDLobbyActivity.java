@@ -1,9 +1,12 @@
 package io.github.foundationgames.builderdash.game;
 
 import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
+import net.minecraft.block.Blocks;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
@@ -15,7 +18,9 @@ import xyz.nucleoid.plasmid.api.game.common.GameWaitingLobby;
 import xyz.nucleoid.plasmid.api.game.event.GameActivityEvents;
 import xyz.nucleoid.plasmid.api.game.event.GamePlayerEvents;
 import xyz.nucleoid.plasmid.api.game.player.JoinOffer;
+import xyz.nucleoid.plasmid.api.game.rule.GameRuleType;
 import xyz.nucleoid.stimuli.event.EventResult;
+import xyz.nucleoid.stimuli.event.block.BlockUseEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
 public class BDLobbyActivity<C extends BDGameConfig> {
@@ -41,15 +46,25 @@ public class BDLobbyActivity<C extends BDGameConfig> {
                 .setGenerator(map.asGenerator(context.server()));
 
         return context.openWithWorld(worldConfig, (game, world) -> {
-            var waiting = new BDLobbyActivity<>(game.getGameSpace(), world, map, context.config());
+            var lobby = new BDLobbyActivity<>(game.getGameSpace(), world, map, context.config());
 
             GameWaitingLobby.addTo(game, config.getLobbyConfig());
+            game.allow(GameRuleType.INTERACTION);
+            game.deny(GameRuleType.USE_ITEMS).deny(GameRuleType.USE_ENTITIES);
+            game.listen(BlockUseEvent.EVENT, (player, hand, hitResult) -> {
+                var state = player.getWorld().getBlockState(hitResult.getBlockPos());
+                if (state.isIn(BlockTags.BUTTONS) || state.isOf(Blocks.CHEST) || state.isOf(Blocks.BARREL)) {
+                    return ActionResult.PASS;
+                }
 
-            game.listen(GameActivityEvents.REQUEST_START, waiting::requestStart);
-            game.listen(GamePlayerEvents.ADD, waiting::addPlayer);
+                return ActionResult.FAIL;
+            });
+
+            game.listen(GameActivityEvents.REQUEST_START, lobby::requestStart);
+            game.listen(GamePlayerEvents.ADD, lobby::addPlayer);
             game.listen(GamePlayerEvents.OFFER, JoinOffer::accept);
             game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, Vec3d.ZERO));
-            game.listen(PlayerDeathEvent.EVENT, waiting::onPlayerDeath);
+            game.listen(PlayerDeathEvent.EVENT, lobby::onPlayerDeath);
         });
     }
 
@@ -70,6 +85,6 @@ public class BDLobbyActivity<C extends BDGameConfig> {
 
     private void spawnPlayer(ServerPlayerEntity player) {
         this.playerLogic.resetPlayer(player, GameMode.ADVENTURE);
-        this.playerLogic.spawnPlayer(player, this.map.spawn);
+        this.playerLogic.spawnPlayer(player, this.map.spawn, this.map.spawn.center());
     }
 }

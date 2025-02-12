@@ -1,0 +1,21 @@
+{
+  "type": "builderdash:versus",
+  "map": {
+    "time": 5000,
+    "map_id": "builderdash:default"
+  },
+  "players": {
+    "min": 2,
+    "max": 99,
+    "threshold": 2,
+    "countdown": {
+      "ready_seconds": 1,
+      "full_seconds": 1
+    }
+  },
+  "prompt_list": ["Word One", "Word Two", "Word Three"],
+  "build_time": 60,
+  "vote_time": 40,
+  "point_multiplier_per_round": 1.5,
+  "double_rounds": true
+}

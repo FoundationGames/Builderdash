@@ -1,6 +1,9 @@
 package io.github.foundationgames.builderdash.game.map;
 
 import io.github.foundationgames.builderdash.BDUtil;
+import io.github.foundationgames.builderdash.game.element.TickingAnimation;
+import io.github.foundationgames.builderdash.game.element.display.InWorldDisplay;
+import io.github.foundationgames.builderdash.game.sound.SFX;
 import net.minecraft.block.BlockEntityProvider;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.SpawnReason;
@@ -16,11 +19,12 @@ import net.minecraft.util.math.Vec3d;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.map_templates.MapTemplate;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, BlockBounds buildSafeArea) {
-    public static BuildZone get(Identifier mapId, MapTemplate template, String marker) {
+public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, BlockBounds buildSafeArea, InWorldDisplay[] displays) {
+    public static BuildZone get(Identifier mapId, MapTemplate template, String marker, String[] displays) {
         var templateRegion = template.getMetadata().getFirstRegion(marker + "_template");
         var playerSafeRegion = BDUtil.regionOrThrow(mapId, template, marker + "_playersafe");
         var buildSafeRegion = BDUtil.regionOrThrow(mapId, template, marker + "_buildsafe");
@@ -30,7 +34,13 @@ public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, Bl
             templateArea = templateRegion.getBounds();
         }
 
-        return new BuildZone(templateArea, playerSafeRegion.getBounds(), buildSafeRegion.getBounds());
+        var iwDisplays = new InWorldDisplay[displays.length];
+
+        for (int i = 0; i < displays.length; i++) {
+            iwDisplays[i] = InWorldDisplay.of(BDUtil.regionOrThrow(mapId, template, displays[i]));
+        }
+
+        return new BuildZone(templateArea, playerSafeRegion.getBounds(), buildSafeRegion.getBounds(), iwDisplays);
     }
 
     public BuildZone copy(ServerWorld world, BlockPos to) {
@@ -52,10 +62,10 @@ public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, Bl
         return new BuildZone(
                 templateArea().offset(offset),
                 playerSafeArea().offset(offset),
-                buildSafeArea().offset(offset));
+                buildSafeArea().offset(offset), InWorldDisplay.offset(offset, displays()));
     }
 
-    public void copyBuildSliceWithEntities(ServerWorld world, BlockPos to, int slice) {
+    public boolean copyBuildSliceWithEntities(ServerWorld world, BlockPos to, int slice) {
         slice = MathHelper.clamp(slice, 0, this.buildSafeArea.size().getY() - 1);
 
         var offset = to.subtract(buildSafeArea().min());
@@ -69,11 +79,17 @@ public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, Bl
         var iter = new CuboidBlockIterator(srcMinPos.getX(), srcMinPos.getY(), srcMinPos.getZ(),
                 srcMaxPos.getX(), srcMaxPos.getY(), srcMaxPos.getZ());
 
+        boolean changed = false;
         while (iter.step()) {
             srcPos.set(iter.getX(), iter.getY(), iter.getZ());
             destPos.set(iter.getX() + offset.getX(), iter.getY() + offset.getY(), iter.getZ() + offset.getZ());
 
             var state = world.getBlockState(srcPos);
+
+            if (!changed) {
+                changed = !state.isOf(world.getBlockState(destPos).getBlock());
+            }
+
             world.setBlockState(destPos, state, 3, 0);
 
             var be = world.getBlockEntity(srcPos);
@@ -99,6 +115,8 @@ public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, Bl
         for (var entity : entities) if (!(entity instanceof PlayerEntity)) {
             entity.teleport(world, 0, -9999, 0, Set.of(), 0, 0, true);
             entity.remove(Entity.RemovalReason.KILLED);
+
+            changed = true;
         }
 
         // Add new copied ones
@@ -114,7 +132,11 @@ public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, Bl
                 newEntity.setPosition(entity.getPos().add(offsetF));
                 world.spawnEntity(newEntity);
             }
+
+            changed = true;
         }
+
+        return changed;
     }
 
     public void copyBuild(ServerWorld world, BlockPos to) {
@@ -144,11 +166,11 @@ public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, Bl
         }
     }
 
-    public AnimatedCopy makeCopyAnimation(BuildZone dest, boolean reverse, int ticksPerSlice) {
-        return new AnimatedCopy(this, dest.buildSafeArea().min(), reverse, ticksPerSlice);
+    public CopyAnimation makeCopyAnimation(BuildZone dest, boolean reverse, int ticksPerSlice) {
+        return new CopyAnimation(this, dest.buildSafeArea().min(), reverse, ticksPerSlice);
     }
 
-    public static class AnimatedCopy {
+    public static class CopyAnimation implements TickingAnimation {
         public final BuildZone zone;
         public final BlockPos dest;
         public final boolean reverse;
@@ -156,8 +178,11 @@ public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, Bl
 
         private int currentSlice = -1;
         private int timeToNextSlice = 0;
+        private final TickingAnimation.Pool soundPlayer = new Pool(new HashSet<>());
 
-        public AnimatedCopy(BuildZone zone, BlockPos dest, boolean reverse, int ticksPerSlice) {
+        private boolean active = true;
+
+        public CopyAnimation(BuildZone zone, BlockPos dest, boolean reverse, int ticksPerSlice) {
             this.zone = zone;
             this.dest = dest;
             this.reverse = reverse;
@@ -168,25 +193,46 @@ public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, Bl
             }
         }
 
+        @Override
         public boolean tick(ServerWorld world) {
-            if (this.timeToNextSlice <= 0) {
-                if (this.reverse) {
-                    this.currentSlice--;
-                } else {
-                    this.currentSlice++;
+            if (active) {
+                int height = this.zone.buildSafeArea().size().getY();
+                if (this.timeToNextSlice <= 0) {
+                    if (this.reverse) {
+                        while (this.currentSlice > 0) {
+                            this.currentSlice--;
+
+                            if (this.zone.copyBuildSliceWithEntities(world, this.dest, this.currentSlice)) {
+                                float pitch = (float) this.currentSlice / height;
+                                SFX.BUILD_LAYER.play(world, 12 * pitch).tick(world);
+                                break;
+                            }
+                        }
+                    } else {
+                        while (this.currentSlice < height) {
+                            this.currentSlice++;
+
+                            if (this.zone.copyBuildSliceWithEntities(world, this.dest, this.currentSlice)) {
+                                float pitch = (float) this.currentSlice / height;
+                                SFX.BUILD_LAYER.play(world, 12 * pitch - 12).tick(world);
+                                break;
+                            }
+                        }
+                    }
+
+                    this.timeToNextSlice = this.ticksPerSlice;
                 }
 
-                this.timeToNextSlice = this.ticksPerSlice;
-                this.zone.copyBuildSliceWithEntities(world, this.dest, this.currentSlice);
+                this.timeToNextSlice--;
             }
-
-            this.timeToNextSlice--;
 
             if (this.reverse) {
-                return this.currentSlice != 0;
+                this.active = this.currentSlice != 0;
             } else {
-                return this.currentSlice != this.zone.buildSafeArea().size().getY();
+                this.active = this.currentSlice != this.zone.buildSafeArea().size().getY();
             }
+
+            return this.active || this.soundPlayer.tick(world);
         }
     }
 }

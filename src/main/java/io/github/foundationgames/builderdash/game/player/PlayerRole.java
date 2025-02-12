@@ -59,8 +59,10 @@ public class PlayerRole {
             this.player.player.ifOnline(this.world, s -> {
                 s.getInventory().clear();
 
-                s.getAbilities().allowFlying = true;
-                s.sendAbilitiesUpdate();
+                if (!s.getAbilities().allowFlying) {
+                    s.getAbilities().allowFlying = true;
+                    s.sendAbilitiesUpdate();
+                }
             });
         }
     }

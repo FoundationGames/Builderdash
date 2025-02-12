@@ -1,13 +1,22 @@
 package io.github.foundationgames.builderdash.game;
 
+import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
+import io.github.foundationgames.builderdash.game.element.TickingAnimation;
+import io.github.foundationgames.builderdash.game.element.display.GenericContent;
+import io.github.foundationgames.builderdash.game.map.BuildZone;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
 import io.github.foundationgames.builderdash.game.player.BDPlayer;
+import io.github.foundationgames.builderdash.game.player.PlayerRole;
+import io.github.foundationgames.builderdash.game.sound.SFX;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.network.message.MessageType;
 import net.minecraft.network.message.SignedMessage;
+import net.minecraft.registry.tag.DamageTypeTags;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
@@ -42,14 +51,24 @@ import xyz.nucleoid.stimuli.event.player.PlayerAttackEntityEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDamageEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 import xyz.nucleoid.stimuli.event.player.ReplacePlayerChatEvent;
+import xyz.nucleoid.stimuli.event.world.ExplosionDetonatedEvent;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class BDGameActivity<C extends BDGameConfig> {
+    public static final String QUOTE = "text.builderdash.quote";
     public static final String TIME_REMAINING = "label.builderdash.time_remaining";
     public static final String YOU_ARE_BUILDING = "label.builderdash.you_are_building";
+
     public static final Text WON_THE_GAME = Text.translatable("title.builderdash.won_the_game").formatted(Formatting.GREEN);
+    public static final Text TYPE_DONE_1 = Text.translatable("label.builderdash.type_done_1").formatted(Formatting.LIGHT_PURPLE);
+    public static final Text TYPE_DONE_2 = Text.translatable("label.builderdash.type_done_2").formatted(Formatting.LIGHT_PURPLE);
+    public static final Text BUILD_PROMPT = Text.translatable("title.builderdash.build_prompt").formatted(Formatting.GREEN);
 
     public static final int SEC = 20;
 
@@ -63,8 +82,9 @@ public class BDGameActivity<C extends BDGameConfig> {
     public final ServerWorld world;
     public final GlobalWidgets widgets;
     protected final SidebarWidget scoreboard;
+    public final Set<TickingAnimation> animations = new HashSet<>();
 
-    protected BlockBounds respawn;
+    protected BuildZone respawn;
     protected int timeToPhaseChange = 1;
     protected int totalTime = 1;
     @Nullable
@@ -84,7 +104,7 @@ public class BDGameActivity<C extends BDGameConfig> {
         this.world = world;
         this.widgets = widgets;
 
-        this.respawn = map.spawn;
+        this.respawn = map.singleZone;
 
         for (PlayerRef player : participants) {
             this.participants.put(player, new BDPlayer(world, player));
@@ -99,6 +119,7 @@ public class BDGameActivity<C extends BDGameConfig> {
         game.setRule(GameRuleType.THROW_ITEMS, EventResult.DENY);
         game.setRule(GameRuleType.UNSTABLE_TNT, EventResult.DENY);
         game.setRule(GameRuleType.FIRE_TICK, EventResult.DENY);
+        game.listen(ExplosionDetonatedEvent.EVENT, (explosion, blocksToDestroy) -> EventResult.DENY);
 
         game.listen(GameActivityEvents.ENABLE, this::onOpen);
         game.listen(GameActivityEvents.DISABLE, this::onClose);
@@ -120,8 +141,14 @@ public class BDGameActivity<C extends BDGameConfig> {
                 this.canPlayerModify(player, pos));
         game.listen(BlockBreakEvent.EVENT, (player, world1, pos) ->
                 this.canPlayerModify(player, pos));
-        game.listen(BlockUseEvent.EVENT, (player, hand, hitResult) ->
-                this.canPlayerModify(player, hitResult.getBlockPos()).asActionResult());
+        game.listen(BlockUseEvent.EVENT, (player, hand, hitResult) -> {
+            var r = this.canPlayerModify(player, hitResult.getBlockPos());
+            if (r == EventResult.DENY) {
+                var os = hitResult.getBlockPos().offset(hitResult.getSide());
+                return this.canPlayerModify(player, os).asActionResult();
+            }
+            return r.asActionResult();
+        });
         game.listen(EntityUseEvent.EVENT, (player, entity, hand, hitResult) ->
                 this.canPlayerModify(player, entity.getBlockPos()));
         game.listen(FlowerPotModifyEvent.EVENT, (player, hand, hitResult) ->
@@ -197,11 +224,16 @@ public class BDGameActivity<C extends BDGameConfig> {
     }
 
     protected BlockBounds getSpawnAreaFor(PlayerRef ref) {
-        return this.respawn;
+        return this.respawn.playerSafeArea();
     }
 
     protected EventResult onPlayerDamage(ServerPlayerEntity player, DamageSource source, float amount) {
-        this.spawnParticipant(player);
+        if (source.isIn(DamageTypeTags.IS_PLAYER_ATTACK) ||
+                source.isOf(DamageTypes.OUT_OF_WORLD) ||
+                source.isOf(DamageTypes.IN_WALL)) {
+            this.spawnParticipant(player);
+        }
+
         return EventResult.DENY;
     }
 
@@ -212,13 +244,14 @@ public class BDGameActivity<C extends BDGameConfig> {
 
     protected void spawnParticipant(ServerPlayerEntity player) {
         var ref = PlayerRef.of(player);
+        var spawn = this.getSpawnAreaFor(ref);
         this.playerLogic.resetPlayer(player, participants.get(ref));
-        this.playerLogic.spawnPlayer(player, this.getSpawnAreaFor(ref));
+        this.playerLogic.spawnPlayer(player, spawn, spawn.center());
     }
 
     protected void spawnSpectator(ServerPlayerEntity player) {
         this.playerLogic.resetPlayer(player, GameMode.SPECTATOR);
-        this.playerLogic.spawnPlayer(player, this.respawn);
+        this.playerLogic.spawnPlayer(player, this.respawn.playerSafeArea(), this.respawn.buildSafeArea().center());
     }
 
     protected static String formattedTime(int sec) {
@@ -239,11 +272,19 @@ public class BDGameActivity<C extends BDGameConfig> {
         if (this.timeToPhaseChange % SEC == 0) {
             this.sec(this.timeToPhaseChange / SEC);
         }
+
+        var remove = new HashSet<TickingAnimation>();
+        for (var anim : this.animations) {
+            if (!anim.tick(this.world)) {
+                remove.add(anim);
+            }
+        }
+        this.animations.removeAll(remove);
     }
 
     protected void sec(int timeToPhaseChangeSec) {
         if (this.timerBar != null) {
-            this.timerBar.setTitle(Text.translatable(TIME_REMAINING, formattedTime(timeToPhaseChangeSec)));
+            this.timerBar.setTitle(this.createTimeText(timeToPhaseChangeSec));
             this.timerBar.setProgress((float) this.timeToPhaseChange / this.totalTime);
         }
     }
@@ -252,5 +293,59 @@ public class BDGameActivity<C extends BDGameConfig> {
 
     public void endGame() {
         this.gameSpace.close(GameCloseReason.FINISHED);
+    }
+
+    protected void removeTimerBar() {
+        if (this.timerBar != null) {
+            this.widgets.removeWidget(this.timerBar);
+        }
+    }
+
+    protected void setTimerBar(BossBar.Color color, BossBar.Style style) {
+        if (this.timerBar != null) {
+            this.widgets.removeWidget(this.timerBar);
+        }
+        this.timerBar = this.widgets.addBossBar(this.createTimeText(this.totalTime % SEC), color, style);
+    }
+
+    protected Text createTimeText(int timeToPhaseChangeSec) {
+        return Text.translatable(TIME_REMAINING, formattedTime(timeToPhaseChangeSec));
+    }
+
+    protected Text[] createScoresForScoreboard() {
+        var players = new ArrayList<>(this.participants.values());
+        players.sort(Collections.reverseOrder(Comparator.comparingInt(p -> p.score)));
+        return players.stream().map(p ->
+                Text.literal(Integer.toString(p.score)).formatted(Formatting.AQUA)
+                        .append(Text.literal(" - ").formatted(Formatting.GRAY))
+                        .append(p.displayName())
+        ).toArray(Text[]::new);
+    }
+
+    protected void openWinArea(BDPlayer winner, BuildZone winnerZone) {
+        this.respawn = winnerZone;
+
+        for (var player : this.participants.values()) {
+            player.updateRole(new PlayerRole.Flying(this.world, player));
+            player.player.ifOnline(this.gameSpace, this::spawnParticipant);
+        }
+
+        var winnerName = winner.displayName().copy().formatted(Formatting.AQUA, Formatting.BOLD);
+        this.gameSpace.getPlayers().showTitle(
+                winnerName, WON_THE_GAME, 10, 10 * SEC, 10
+        );
+
+        if (winnerZone.displays().length > 0) {
+            var disp = winnerZone.displays()[0];
+
+            if (disp.getAttachment() == null) ChunkAttachment.of(disp, this.world, disp.getPos());
+
+            var content = GenericContent.builder()
+                    .addTop(winnerName, 1, 8)
+                    .addTop(WON_THE_GAME, 1, 7);
+            disp.setContent(content.build());
+        }
+
+        this.animations.add(SFX.FANFARE.play(this.world));
     }
 }
