@@ -5,7 +5,6 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.foundationgames.builderdash.Builderdash;
 import io.github.foundationgames.builderdash.game.BDCustomWordsConfig;
-import io.github.foundationgames.builderdash.game.BDGameConfig;
 import io.github.foundationgames.builderdash.game.CustomWordsPersistentState;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMapConfig;
@@ -20,7 +19,9 @@ import java.util.ArrayList;
 public record BDVersusConfig(
         WaitingLobbyConfig players, WordList wordList, int buildTime, int voteTime, float pointRoundMul,
         boolean doubleRounds, BuilderdashMapConfig map
-) implements BDGameConfig, BDCustomWordsConfig<BDVersusConfig> {
+) implements BDCustomWordsConfig<BDVersusConfig> {
+    public static final String VERSUS = "versus";
+
     public static final Identifier DEFAULT_CONFIG = Builderdash.id("versus");
     public static final Identifier FAST_CONFIG = Builderdash.id("versus_fast");
     public static final Identifier DOUBLE_CONFIG = Builderdash.id("versus_double_rounds");
@@ -45,6 +46,11 @@ public record BDVersusConfig(
     @Override
     public WaitingLobbyConfig getLobbyConfig() {
         return players();
+    }
+
+    @Override
+    public String getGameName() {
+        return VERSUS;
     }
 
     @Override

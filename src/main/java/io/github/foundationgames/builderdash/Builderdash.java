@@ -2,8 +2,8 @@ package io.github.foundationgames.builderdash;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.github.foundationgames.builderdash.game.BDCustomWordsConfig;
-import io.github.foundationgames.builderdash.game.BDLobbyActivity;
 import io.github.foundationgames.builderdash.game.CustomWordsPersistentState;
+import io.github.foundationgames.builderdash.game.lobby.BDLobbyActivity;
 import io.github.foundationgames.builderdash.game.mode.pictionary.BDPictionaryConfig;
 import io.github.foundationgames.builderdash.game.mode.pictionary.PictionaryCommand;
 import io.github.foundationgames.builderdash.game.mode.telephone.BDTelephoneConfig;
@@ -30,24 +30,23 @@ import xyz.nucleoid.plasmid.api.game.config.GameConfigs;
 import xyz.nucleoid.plasmid.impl.game.manager.GameSpaceManagerImpl;
 
 public class Builderdash implements ModInitializer {
-
     public static final String ID = "builderdash";
     public static final Logger LOG = LogManager.getLogger(ID);
 
     public static final GameType<BDPictionaryConfig> PICTIONARY = GameType.register(
-            id("pictionary"),
+            id(BDPictionaryConfig.PICTIONARY),
             BDPictionaryConfig.CODEC,
             BDLobbyActivity::open
     );
 
     public static final GameType<BDTelephoneConfig> TELEPHONE = GameType.register(
-            id("telephone"),
+            id(BDTelephoneConfig.TELEPHONE),
             BDTelephoneConfig.CODEC,
             BDLobbyActivity::open
     );
 
     public static final GameType<BDVersusConfig> VERSUS = GameType.register(
-            id("versus"),
+            id(BDVersusConfig.VERSUS),
             BDVersusConfig.CODEC,
             BDLobbyActivity::open
     );
@@ -68,7 +67,7 @@ public class Builderdash implements ModInitializer {
         if (value != null) {
             if (value.config() instanceof BDCustomWordsConfig<?> config) {
                 value = new GameConfig<>((GameType<Object>) value.type(), null, null, null, null, CustomValuesConfig.empty(),
-                        config.withCustomWords(CustomWordsPersistentState.get(server, CustomWordsPersistentState.PICTIONARY_KEY)));
+                        config.withCustomWords(CustomWordsPersistentState.get(server, CustomWordsPersistentState.getKeyForGame(config.getGameName()))));
             }
 
             // TODO: Handle errors?

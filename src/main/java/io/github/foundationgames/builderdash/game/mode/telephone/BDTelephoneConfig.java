@@ -15,6 +15,8 @@ import xyz.nucleoid.plasmid.api.game.common.config.WaitingLobbyConfig;
 public record BDTelephoneConfig(
         WaitingLobbyConfig players, int buildTime, int guessTime, boolean doubleRounds, BuilderdashMapConfig map
 ) implements BDGameConfig {
+    public static final String TELEPHONE = "telephone";
+
     public static final Identifier DEFAULT_CONFIG = Builderdash.id("telephone");
     public static final Identifier FAST_CONFIG = Builderdash.id("telephone_fast");
     public static final Identifier DOUBLE_CONFIG = Builderdash.id("telephone_double_rounds");
@@ -37,6 +39,11 @@ public record BDTelephoneConfig(
     @Override
     public WaitingLobbyConfig getLobbyConfig() {
         return players();
+    }
+
+    @Override
+    public String getGameName() {
+        return TELEPHONE;
     }
 
     @Override

@@ -5,7 +5,6 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.foundationgames.builderdash.Builderdash;
 import io.github.foundationgames.builderdash.game.BDCustomWordsConfig;
-import io.github.foundationgames.builderdash.game.BDGameConfig;
 import io.github.foundationgames.builderdash.game.CustomWordsPersistentState;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMapConfig;
@@ -19,7 +18,9 @@ import java.util.ArrayList;
 public record BDPictionaryConfig(
         WaitingLobbyConfig players, WordList wordList, int wordChooseTime, int maxBuildTime, int minBuildTime,
         float guesserThreshold, float revealPercent, int guessCloseness, boolean doubleRounds, BuilderdashMapConfig map
-) implements BDGameConfig, BDCustomWordsConfig<BDPictionaryConfig> {
+) implements BDCustomWordsConfig<BDPictionaryConfig> {
+    public static final String PICTIONARY = "pictionary";
+
     public static final Identifier DEFAULT_CONFIG = Builderdash.id("pictionary");
     public static final Identifier DOUBLE_CONFIG = Builderdash.id("pictionary_double_rounds");
     public static final Identifier TEST_CONFIG = Builderdash.id("pictionary_test");
@@ -63,6 +64,11 @@ public record BDPictionaryConfig(
     @Override
     public WaitingLobbyConfig getLobbyConfig() {
         return players();
+    }
+
+    @Override
+    public String getGameName() {
+        return PICTIONARY;
     }
 
     @Override
