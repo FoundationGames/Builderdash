@@ -194,6 +194,10 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
         this.playersReadyToContinue.clear();
 
         this.setTimerBar(BossBar.Color.BLUE, BossBar.Style.NOTCHED_20);
+        this.timesToAnnounce.add(TIME_ONE_MIN);
+        this.timesToAnnounce.add(TIME_THIRTY_SEC);
+        this.timesToAnnounce.add(TIME_TEN_SEC);
+        this.timesToAnnounce.addAll(COUNTDOWN_FROM_FIVE);
 
         var roundBuilds = this.buildRounds.get(this.currentRound);
         for (BuildPairWithPrompt pair : roundBuilds) {
@@ -242,7 +246,7 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
         this.totalTime = this.timeToPhaseChange;
         this.respawn = this.gameMap.doubleZone;
 
-        this.removeTimerBar();
+        this.removeTimerInfo();
 
         this.currentlyAssignedZones.clear();
         this.playersReadyToContinue.clear();
@@ -295,6 +299,7 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
         this.totalTime = this.timeToPhaseChange;
 
         this.setTimerBar(BossBar.Color.GREEN, BossBar.Style.NOTCHED_10);
+        this.timesToAnnounce.addAll(COUNTDOWN_FROM_FIVE);
 
         for (var bdPlayer : this.participants.values()) {
             bdPlayer.updateRole(new VersusVoterRole(this.world, bdPlayer, this));
@@ -335,7 +340,7 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
             bdPlayer.updateRole(new PlayerRole.Flying(this.world, bdPlayer));
         }
 
-        this.removeTimerBar();
+        this.removeTimerInfo();
 
         var anims = new ArrayDeque<TickingAnimation>();
         anims.addLast(SFX.VERSUS_VOTE_BEGIN_TALLY.play(this.world));

@@ -1,6 +1,8 @@
 package io.github.foundationgames.builderdash.tools;
 
+import io.github.foundationgames.builderdash.BDUtil;
 import io.github.foundationgames.builderdash.tools.ui.BDToolboxGui;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -63,11 +65,19 @@ public class BDToolsState {
         PLAYERS.computeIfAbsent(player, p -> new ArrayDeque<>()).add(this);
     }
 
+    public boolean denyOperation() {
+        return false;
+    }
+
     public void openToolbox(ServerPlayerEntity player) {
+        if (denyOperation()) return;
+
         new BDToolboxGui(player).open();
     }
 
     public void undo() {
+        if (denyOperation()) return;
+
         int[] blocksChanged = {0};
         boolean success = this.audits.undo(blocksChanged);
 
@@ -79,6 +89,8 @@ public class BDToolsState {
     }
 
     public void redo() {
+        if (denyOperation()) return;
+
         int[] blocksChanged = {0};
         boolean success = this.audits.redo(blocksChanged);
 
@@ -90,6 +102,8 @@ public class BDToolsState {
     }
 
     public void fill(BlockBounds area) {
+        if (denyOperation()) return;
+
         var player = this.player.getEntity(this.server);
         if (player != null) {
             var params = OperationParams.of(player.getInventory());
@@ -116,6 +130,8 @@ public class BDToolsState {
     }
 
     public void sphere(BlockBounds area) {
+        if (denyOperation()) return;
+
         var player = this.player.getEntity(this.server);
         if (player != null) {
             var params = OperationParams.of(player.getInventory());
@@ -157,6 +173,8 @@ public class BDToolsState {
     }
 
     public void cylinder(BlockBounds area) {
+        if (denyOperation()) return;
+
         var player = this.player.getEntity(this.server);
         if (player != null) {
             var params = OperationParams.of(player.getInventory());
@@ -196,6 +214,8 @@ public class BDToolsState {
     }
 
     public void brush(BlockPos origin, int radius) {
+        if (denyOperation()) return;
+
         var player = this.player.getEntity(this.server);
         if (player != null) {
             var params = OperationParams.of(player.getInventory());
@@ -305,13 +325,37 @@ public class BDToolsState {
 
         BDToolsState state;
         if (forPlayer.isEmpty()) {
-            state = new BDToolsState(player.getServer(), ref, DEFAULT_MAX_UNDOS, null);
+            state = new BDToolsState.Conditional(player.getServer(), ref, DEFAULT_MAX_UNDOS, null);
             forPlayer.addLast(state);
         } else {
             state = forPlayer.getLast();
         }
 
         return state;
+    }
+
+    public static class Conditional extends BDToolsState {
+        public static final Text NOT_PERMITTED = Text.translatable("message.builderdash.tool.no_permission").formatted(Formatting.RED);
+
+        public Conditional(MinecraftServer server, PlayerRef player, int maxUndos, @Nullable BlockBounds restriction) {
+            super(server, player, maxUndos, restriction);
+        }
+
+        @Override
+        public boolean denyOperation() {
+            boolean allowed = false;
+            var entity = player.getEntity(this.server);
+            if (entity != null) {
+                allowed = Permissions.check(entity, BDUtil.PERM_GLOBAL_TOOLBOX, 2);
+            }
+
+            if (allowed) {
+                return false;
+            }
+
+            this.player.ifOnline(this.server, p -> p.sendMessageToClient(NOT_PERMITTED, false));
+            return true;
+        }
     }
 
     public static class Forbidden extends BDToolsState {
@@ -321,44 +365,12 @@ public class BDToolsState {
             super(server, player, maxUndos, restriction);
         }
 
-        private void sendForbiddenMessage() {
+        @Override
+        public boolean denyOperation() {
             this.player.ifOnline(this.server, p ->
                     p.sendMessageToClient(FORBIDDEN, false));
-        }
 
-        @Override
-        public void openToolbox(ServerPlayerEntity player) {
-            this.sendForbiddenMessage();
-        }
-
-        @Override
-        public void undo() {
-            this.sendForbiddenMessage();
-        }
-
-        @Override
-        public void redo() {
-            this.sendForbiddenMessage();
-        }
-
-        @Override
-        public void fill(BlockBounds area) {
-            this.sendForbiddenMessage();
-        }
-
-        @Override
-        public void sphere(BlockBounds area) {
-            this.sendForbiddenMessage();
-        }
-
-        @Override
-        public void cylinder(BlockBounds area) {
-            this.sendForbiddenMessage();
-        }
-
-        @Override
-        public void brush(BlockPos origin, int radius) {
-            this.sendForbiddenMessage();
+            return true;
         }
 
         @Override

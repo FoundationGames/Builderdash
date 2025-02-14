@@ -394,6 +394,11 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
         }
 
         this.setTimerBar(BossBar.Color.BLUE, BossBar.Style.NOTCHED_20);
+        this.timesToAnnounce.add(TIME_ONE_MIN);
+        this.timesToAnnounce.add(TIME_THIRTY_SEC);
+        this.timesToAnnounce.add(TIME_TEN_SEC);
+        this.timesToAnnounce.addAll(COUNTDOWN_FROM_FIVE);
+
         updateDisplay();
 
         this.animations.add(SFX.PICTIONARY_START_GUESSING.play(this.world));
@@ -431,7 +436,7 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
             player.updateRole(new PlayerRole.Flying(this.world, player));
         }
 
-        this.removeTimerBar();
+        this.removeTimerInfo();
         this.promptText = Text.empty();
 
         this.animations.add(SFX.PICTIONARY_WORD_REVEAL.play(this.world));

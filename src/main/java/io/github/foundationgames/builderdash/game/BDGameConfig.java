@@ -11,5 +11,7 @@ public interface BDGameConfig {
 
     PlayerConfig getLobbyConfig();
 
+    String getGameName();
+
     void openActivity(GameSpace game, ServerWorld world, BuilderdashMap map);
 }

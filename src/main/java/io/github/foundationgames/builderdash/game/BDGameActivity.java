@@ -58,10 +58,22 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class BDGameActivity<C extends BDGameConfig> {
+    public static final AnnouncedTime TIME_ONE_MIN = new AnnouncedTime(60, Formatting.GREEN, SFX.CLICK);
+    public static final AnnouncedTime TIME_THIRTY_SEC = new AnnouncedTime(30, Formatting.YELLOW, SFX.CLICK);
+    public static final AnnouncedTime TIME_TEN_SEC = new AnnouncedTime(30, Formatting.YELLOW, SFX.CLICK);
+    public static final List<AnnouncedTime> COUNTDOWN_FROM_FIVE = List.of(
+            new AnnouncedTime(5, Formatting.GOLD, SFX.NOTE_CLICK),
+            new AnnouncedTime(4, Formatting.GOLD, SFX.NOTE_CLICK),
+            new AnnouncedTime(3, Formatting.RED, SFX.HIGH_CLICK),
+            new AnnouncedTime(2, Formatting.RED, SFX.HIGH_CLICK),
+            new AnnouncedTime(1, Formatting.RED, SFX.HIGH_CLICK)
+    );
+
     public static final String QUOTE = "text.builderdash.quote";
     public static final String TIME_REMAINING = "label.builderdash.time_remaining";
     public static final String YOU_ARE_BUILDING = "label.builderdash.you_are_building";
@@ -90,6 +102,9 @@ public class BDGameActivity<C extends BDGameConfig> {
     protected int totalTime = 1;
     @Nullable
     protected BossBarWidget timerBar = null;
+    protected final List<AnnouncedTime> timesToAnnounce = new ArrayList<>();
+
+    private int lastCountdownTime = Integer.MAX_VALUE;
 
     protected BDGameActivity(GameSpace space, GameActivity game, ServerWorld world, BuilderdashMap map, C config) {
         Set<PlayerRef> participants = space.getPlayers().stream()
@@ -281,6 +296,27 @@ public class BDGameActivity<C extends BDGameConfig> {
             this.timerBar.setTitle(this.createTimeText(timeToPhaseChangeSec));
             this.timerBar.setProgress((float) this.timeToPhaseChange / this.totalTime);
         }
+
+        AnnouncedTime lowest = null;
+        for (var time : this.timesToAnnounce) {
+            int t = time.secRemaining();
+
+            if (timeToPhaseChangeSec <= t && t < this.lastCountdownTime) {
+                if (lowest == null || time.secRemaining() < lowest.secRemaining()) {
+                    lowest = time;
+                }
+            }
+        }
+
+        if (lowest != null) {
+            this.gameSpace.getPlayers().showTitle(Text.empty(),
+                    Text.literal(formattedTime(timeToPhaseChangeSec)).formatted(lowest.color()),
+                    0, 25, 2);
+
+            this.animations.add(lowest.sound().play(this.world));
+        }
+
+        this.lastCountdownTime = timeToPhaseChangeSec;
     }
 
     protected void nextPhase() {}
@@ -289,10 +325,12 @@ public class BDGameActivity<C extends BDGameConfig> {
         this.gameSpace.close(GameCloseReason.FINISHED);
     }
 
-    protected void removeTimerBar() {
+    protected void removeTimerInfo() {
         if (this.timerBar != null) {
             this.widgets.removeWidget(this.timerBar);
         }
+
+        this.timesToAnnounce.clear();
     }
 
     protected void setTimerBar(BossBar.Color color, BossBar.Style style) {
@@ -342,4 +380,6 @@ public class BDGameActivity<C extends BDGameConfig> {
 
         this.animations.add(SFX.FANFARE.play(this.world));
     }
+
+    public record AnnouncedTime(int secRemaining, Formatting color, SFX sound) {}
 }

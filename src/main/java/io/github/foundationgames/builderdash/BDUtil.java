@@ -4,11 +4,13 @@ import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.block.NoteBlock;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.ProfileComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import xyz.nucleoid.map_templates.MapTemplate;
@@ -16,6 +18,7 @@ import xyz.nucleoid.map_templates.TemplateRegion;
 import xyz.nucleoid.plasmid.game.GameOpenException;
 
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
 public enum BDUtil {;
@@ -27,6 +30,15 @@ public enum BDUtil {;
             "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNDBlYmMzMzUyYzI1MmQyMzU3MTNkNWNiY2JjYTg3OTAyNTIyMWNhYWFlOWM0YWUwY2FiNzkyZDk3NGU2NSJ9fX0=",
             "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYjNkOTNlOGI1ZmIwYjVkNTBhYmQ0ZWY4ODUzMmY0Njg3NGI5OTI0ZjY2OGRkYjAxMDkxNDY4ZTRlNjFiOWM4MyJ9fX0="
     };
+    public static final String[] HEAD_READY = {
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNmZmZmE2MDJlMzY4MjE0ZGQ2MmNlY2Q2ODE1ZjE0OTI2ZWU1N2I5NDgxNDM0OTVlOTMxYTc3NjM2MzcyYmU1YSJ9fX0=",
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOGM4MTNiZTEwOGIzMTE1N2ZiYjliNTBkODM2Y2FhMGQyNjEyZjZiY2ZlZjRhZTBjNmI3N2FlMzQ3OWUwMmEzZSJ9fX0="
+    };
+
+    public static final String PERM_GAME_OPEN = "open";
+    public static final String PERM_GAME_EDIT = "edit";
+
+    public static final String PERM_GLOBAL_TOOLBOX = Builderdash.ID + ".toolbox";
 
     public static TemplateRegion regionOrThrow(Identifier mapId, MapTemplate template, String marker) throws GameOpenException {
         var region = template.getMetadata().getFirstRegion(marker);
@@ -65,6 +77,12 @@ public enum BDUtil {;
         }
 
         return ints;
+    }
+
+    public static Predicate<ServerCommandSource> permission(String game, String permission, int otherwise) {
+        return src ->
+                Permissions.check(src, Builderdash.ID + ".any." + permission, otherwise) &&
+                Permissions.check(src, Builderdash.ID + "." + game + "." + permission, otherwise);
     }
 
     public static float fSharp(int note) {

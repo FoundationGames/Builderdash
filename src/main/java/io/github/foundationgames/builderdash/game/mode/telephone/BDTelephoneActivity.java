@@ -419,6 +419,10 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
         this.playersReadyToContinue.clear();
 
         this.setTimerBar(BossBar.Color.BLUE, BossBar.Style.NOTCHED_20);
+        this.timesToAnnounce.add(TIME_ONE_MIN);
+        this.timesToAnnounce.add(TIME_THIRTY_SEC);
+        this.timesToAnnounce.add(TIME_TEN_SEC);
+        this.timesToAnnounce.addAll(COUNTDOWN_FROM_FIVE);
 
         int buildNumber = ((this.currentRound + 1) / 2) - 1;
 
@@ -519,6 +523,8 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
         this.playersReadyToContinue.clear();
 
         this.setTimerBar(BossBar.Color.YELLOW, BossBar.Style.NOTCHED_6);
+        this.timesToAnnounce.add(TIME_TEN_SEC);
+        this.timesToAnnounce.addAll(COUNTDOWN_FROM_FIVE);
 
         int buildNumber = ((this.currentRound + 1) / 2) - 1;
 
@@ -576,7 +582,7 @@ public class BDTelephoneActivity extends BDGameActivity<BDTelephoneConfig> {
 
         this.emptyBuildZone.copyBuild(this.world, this.gameMap.singleZone.buildSafeArea().min());
 
-        this.removeTimerBar();
+        this.removeTimerInfo();
         this.timeToPhaseChange = Integer.MAX_VALUE;
         this.totalTime = this.timeToPhaseChange;
 

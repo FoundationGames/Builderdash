@@ -19,6 +19,7 @@ repositories {
         name = "Nucleoid"
         url = "https://maven.nucleoid.xyz/"
     }
+    mavenCentral()
     mavenLocal()
 }
 
@@ -33,6 +34,9 @@ dependencies {
 
     // Plasmid
     include(modImplementation("xyz.nucleoid:plasmid:${project.plasmid_version}"))
+
+    // Permissions
+    include(modImplementation("me.lucko:fabric-permissions-api:${project.permissions_version}"))
 }
 
 processResources {

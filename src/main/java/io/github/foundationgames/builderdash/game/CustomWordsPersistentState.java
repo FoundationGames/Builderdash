@@ -2,6 +2,7 @@ package io.github.foundationgames.builderdash.game;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import io.github.foundationgames.builderdash.BDUtil;
 import io.github.foundationgames.builderdash.Builderdash;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
@@ -18,8 +19,6 @@ import java.util.List;
 
 public class CustomWordsPersistentState extends PersistentState {
     public static final String SPLIT_STRING_LIST = "[,\\n] ?+";
-    public static final String PICTIONARY_KEY = Builderdash.ID + "_pictionary_custom_words";
-    public static final String VERSUS_KEY = Builderdash.ID + "_versus_custom_words";
 
     public static final PersistentState.Type<CustomWordsPersistentState> TYPE = new PersistentState.Type<>(
             CustomWordsPersistentState::new,
@@ -32,6 +31,10 @@ public class CustomWordsPersistentState extends PersistentState {
 
     public static CustomWordsPersistentState get(MinecraftServer server, String key) {
         return server.getOverworld().getPersistentStateManager().getOrCreate(TYPE, key);
+    }
+
+    public static String getKeyForGame(String game) {
+        return String.format(Builderdash.ID + "_%s_custom_words", game);
     }
 
     public int setWords(String delimitedWordList) {
@@ -103,11 +106,13 @@ public class CustomWordsPersistentState extends PersistentState {
     public static final String WORD_LIST_RESET = "command.builderdash.word_list_reset";
     public static final String WORD_LIST_ADD_DEFAULT = "command.builderdash.word_list_add_default";
 
-    public static LiteralArgumentBuilder<ServerCommandSource> createCommand(LiteralArgumentBuilder<ServerCommandSource> command, String key, String name) {
-        var gameName = Text.translatable(name);
+    public static LiteralArgumentBuilder<ServerCommandSource> createCommand(LiteralArgumentBuilder<ServerCommandSource> command, String game) {
+        var gameName = Text.translatable("name." + Builderdash.ID + "." + game);
+        var key = getKeyForGame(game);
+        var perm = BDUtil.permission(game, BDUtil.PERM_GAME_EDIT, 3);
 
         return command
-                .then(CommandManager.literal("setwords")
+                .then(CommandManager.literal("setwords").requires(perm)
                         .then(CommandManager.argument("word_list", StringArgumentType.greedyString())
                                 .executes(cmd -> {
                                     var wordList = cmd.getArgument("word_list", String.class);
@@ -119,7 +124,7 @@ public class CustomWordsPersistentState extends PersistentState {
                                 })
                         )
                 )
-                .then(CommandManager.literal("addwords")
+                .then(CommandManager.literal("addwords").requires(perm)
                         .then(CommandManager.argument("word_list", StringArgumentType.greedyString())
                                 .executes(cmd -> {
                                     var wordList = cmd.getArgument("word_list", String.class);
@@ -131,7 +136,7 @@ public class CustomWordsPersistentState extends PersistentState {
                                 })
                         )
                 )
-                .then(CommandManager.literal("resetwords")
+                .then(CommandManager.literal("resetwords").requires(perm)
                         .executes(cmd -> {
                             var customWords = CustomWordsPersistentState.get(cmd.getSource().getServer(), key);
 
@@ -140,7 +145,7 @@ public class CustomWordsPersistentState extends PersistentState {
                             return 0;
                         })
                 )
-                .then(CommandManager.literal("getwordcount")
+                .then(CommandManager.literal("getwordcount").requires(perm)
                         .executes(cmd -> {
                             var customWords = CustomWordsPersistentState.get(cmd.getSource().getServer(), key);
                             int ct = customWords.customWords.size();
@@ -151,7 +156,7 @@ public class CustomWordsPersistentState extends PersistentState {
                             return 0;
                         })
                 )
-                .then(CommandManager.literal("withdefault")
+                .then(CommandManager.literal("withdefault").requires(perm)
                         .executes(cmd -> {
                             var customWords = CustomWordsPersistentState.get(cmd.getSource().getServer(), key);
 

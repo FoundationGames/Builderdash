@@ -1,4 +1,15 @@
 {
+  "label.builderdash.lobby.not_enough_players": "Not enough players!",
+  "label.builderdash.lobby.players_ready": "%s/%s players ready",
+  "label.builderdash.lobby.not_enough_ready.1": "Game will start when",
+  "label.builderdash.lobby.not_enough_ready.2": "more players are ready.",
+  "label.builderdash.lobby.half_ready.1": "Many players are ready,",
+  "label.builderdash.lobby.half_ready.2": "game will start shortly.",
+  "label.builderdash.lobby.majority_ready.1": "A majority of players are",
+  "label.builderdash.lobby.majority_ready.2": "ready, starting very soon!",
+  "item.builderdash.lobby.you_are_not_ready": "Status: Not Ready",
+  "item.builderdash.lobby.you_are_ready": "Status: Ready",
+
   "gameType.builderdash.pictionary": "Builderdash: Pictionary",
   "name.builderdash.pictionary": "Pictionary",
   "gui.builderdash.pictionary.choose_word": "Select a Word",
@@ -94,6 +105,7 @@
   "message.builderdash.tool.redo_fail": "Nothing left to redo!",
   "message.builderdash.tool.operation": "Modified %s blocks.",
   "message.builderdash.tool.forbidden": "You are not allowed to use Builderdash Toolbox tools here!",
+  "message.builderdash.tool.no_permission": "Insufficient permissions to use Builderdash Toolbox!",
 
   "gui.builderdash.toolbox": "Builderdash Toolbox",
 

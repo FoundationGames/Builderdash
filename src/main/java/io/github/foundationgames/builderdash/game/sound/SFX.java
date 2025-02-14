@@ -31,6 +31,13 @@ public record SFX(Deque<Step> steps) {
             .sound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 0.4f, 1f).build();
     public static final SFX CLICK = SFX.builder()
             .sound(SoundEvents.BLOCK_NOTE_BLOCK_HAT, 1f, 1f).build();
+    public static final SFX NOTE_CLICK = SFX.builder()
+            .sound(SoundEvents.BLOCK_NOTE_BLOCK_HAT, 1f, 1f)
+            .note(SoundEvents.BLOCK_NOTE_BLOCK_BASS, 1f, 6).build();
+    public static final SFX HIGH_CLICK = SFX.builder()
+            .sound(SoundEvents.BLOCK_NOTE_BLOCK_HAT, 1f, 1f)
+            .note(SoundEvents.BLOCK_NOTE_BLOCK_BASS, 1f, 11)
+            .note(SoundEvents.BLOCK_NOTE_BLOCK_XYLOPHONE, 1f, 11).build();
 
     public static final SFX BUILD_LAYER = SFX.builder()
             .sound(SoundEvents.BLOCK_COPPER_BULB_TURN_ON, 1, 1).build();
