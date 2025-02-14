@@ -9,6 +9,7 @@ import net.minecraft.block.Blocks;
 import net.minecraft.block.NoteBlock;
 import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.network.packet.c2s.play.CloseHandledScreenC2SPacket;
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -36,6 +37,7 @@ import xyz.nucleoid.plasmid.api.game.rule.GameRuleType;
 import xyz.nucleoid.plasmid.api.util.PlayerRef;
 import xyz.nucleoid.stimuli.event.EventResult;
 import xyz.nucleoid.stimuli.event.block.BlockUseEvent;
+import xyz.nucleoid.stimuli.event.player.PlayerC2SPacketEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
 public class BDLobbyActivity<C extends BDGameConfig> {
@@ -109,6 +111,19 @@ public class BDLobbyActivity<C extends BDGameConfig> {
                 }
 
                 return ActionResult.FAIL;
+            });
+
+            game.listen(PlayerC2SPacketEvent.EVENT, (player, packet) -> {
+                if (packet instanceof CloseHandledScreenC2SPacket) {
+                    var ref = PlayerRef.of(player);
+
+                    var lp = lobby.players.get(ref);
+                    if (lp != null) {
+                        lp.gui.open();
+                    }
+                }
+
+                return EventResult.PASS;
             });
 
             game.listen(GameActivityEvents.TICK, lobby::tick);

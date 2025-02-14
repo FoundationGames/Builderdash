@@ -56,6 +56,16 @@ Building-related party minigames for Minecraft, using Plasmid API on Fabric
 - `/builderdash telephone double fast` will start a double-length fast game. This might be the most fun way to play a double-length game.
 - **Disconnected from a game of Telephone?** Rejoin it with `/game join builderdash:telephone` (game name might be different in fast/double mode). If you were originally in the game, you will be let back in and can resume where you left off.
 
+## Permissions
+
+Install [LuckPerms](https://modrinth.com/plugin/luckperms) or another implementation of the [fabric-permissions-api](https://github.com/lucko/fabric-permissions-api) to edit individual Builderdash permissions.
+- `builderdash.any.open`: Permission to open any minigame with `/builderdash`.
+- `builderdash.<game>.open`: Permission to open a specific minigame. `<game>` can be `versus`, `pictionary`, or `telephone`.
+- `builderdash.any.edit`: Permission to edit any minigame with a word list using `/builderdash <game> <addwords/setwords/etc>`.
+- `builderdash.<game>.edit`: Permission to edit a specific minigame's word list using `/builderdash <game> <addwords/setwords/etc>`. `<game>` can be `versus` or `pictionary`.
+- `builderdash.toolbox`: Permission to use Builderdash Toolbox outside of minigames.
+
+
 ## Tips and Tricks
 
 - `/builderdash` and all sub-commands can be substituted with `/bd`, provided no other mod adds a command with that name.

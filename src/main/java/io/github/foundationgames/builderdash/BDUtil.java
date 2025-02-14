@@ -35,10 +35,10 @@ public enum BDUtil {;
             "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOGM4MTNiZTEwOGIzMTE1N2ZiYjliNTBkODM2Y2FhMGQyNjEyZjZiY2ZlZjRhZTBjNmI3N2FlMzQ3OWUwMmEzZSJ9fX0="
     };
 
-    public static String PERM_GAME_OPEN = "open";
-    public static String PERM_GAME_EDIT = "edit";
+    public static final String PERM_GAME_OPEN = "open";
+    public static final String PERM_GAME_EDIT = "edit";
 
-    public static String PERM_GLOBAL_TOOLBOX = Builderdash.ID + ".toolbox";
+    public static final String PERM_GLOBAL_TOOLBOX = Builderdash.ID + ".toolbox";
 
     public static TemplateRegion regionOrThrow(Identifier mapId, MapTemplate template, String marker) throws GameOpenException {
         var region = template.getMetadata().getFirstRegion(marker);
