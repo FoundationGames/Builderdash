@@ -26,7 +26,6 @@ import xyz.nucleoid.plasmid.game.GameOpenContext;
 import xyz.nucleoid.plasmid.game.GameOpenProcedure;
 import xyz.nucleoid.plasmid.game.GameResult;
 import xyz.nucleoid.plasmid.game.GameSpace;
-import xyz.nucleoid.plasmid.game.common.GameWaitingLobby;
 import xyz.nucleoid.plasmid.game.common.GlobalWidgets;
 import xyz.nucleoid.plasmid.game.common.widget.BossBarWidget;
 import xyz.nucleoid.plasmid.game.common.widget.SidebarWidget;

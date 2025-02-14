@@ -6,7 +6,6 @@ import io.github.foundationgames.builderdash.game.element.display.InWorldDisplay
 import io.github.foundationgames.builderdash.game.sound.SFX;
 import net.minecraft.block.BlockEntityProvider;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;

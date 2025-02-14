@@ -1,7 +1,6 @@
 package io.github.foundationgames.builderdash.game;
 
 import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
-import io.github.foundationgames.builderdash.BDUtil;
 import io.github.foundationgames.builderdash.game.element.TickingAnimation;
 import io.github.foundationgames.builderdash.game.element.display.GenericContent;
 import io.github.foundationgames.builderdash.game.map.BuildZone;

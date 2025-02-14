@@ -7,8 +7,6 @@ import io.github.foundationgames.builderdash.tools.item.InstantOperationItem;
 import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
 
 import java.util.function.Function;
 
