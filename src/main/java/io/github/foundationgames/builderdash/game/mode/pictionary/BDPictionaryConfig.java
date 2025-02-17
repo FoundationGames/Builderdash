@@ -6,12 +6,15 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.foundationgames.builderdash.Builderdash;
 import io.github.foundationgames.builderdash.game.BDCustomWordsConfig;
 import io.github.foundationgames.builderdash.game.CustomWordsPersistentState;
+import io.github.foundationgames.builderdash.game.element.title.StyledTitle;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMapConfig;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import xyz.nucleoid.plasmid.game.GameSpace;
 import xyz.nucleoid.plasmid.game.common.config.PlayerConfig;
+import net.minecraft.util.math.Vec3d;
+import org.joml.Quaternionf;
 
 import java.util.ArrayList;
 
@@ -69,6 +72,11 @@ public record BDPictionaryConfig(
     @Override
     public String getGameName() {
         return PICTIONARY;
+    }
+
+    @Override
+    public StyledTitle makeTitle(Vec3d pos, float scale, Quaternionf rot) {
+        return StyledTitle.forMinigame(pos, scale, rot, PICTIONARY, 0x00ff7b);
     }
 
     @Override

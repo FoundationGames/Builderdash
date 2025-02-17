@@ -20,6 +20,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
+import org.joml.Quaternionf;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
 import xyz.nucleoid.plasmid.game.GameActivity;
 import xyz.nucleoid.plasmid.game.GameOpenContext;
@@ -38,6 +39,7 @@ import xyz.nucleoid.plasmid.util.PlayerRef;
 import xyz.nucleoid.stimuli.event.block.BlockUseEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerC2SPacketEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
+import xyz.nucleoid.stimuli.event.world.ExplosionDetonatedEvent;
 
 public class BDLobbyActivity<C extends BDGameConfig> {
     public static final Text WAITING = Text.translatable("text.plasmid.game.waiting_lobby.bar.waiting");
@@ -72,6 +74,8 @@ public class BDLobbyActivity<C extends BDGameConfig> {
     private int timeUntilStart = Integer.MAX_VALUE;
     private float proportionReady = 0f;
 
+    private boolean titleSpawned = false;
+
     private BDLobbyActivity(GameSpace gameSpace, GameActivity game, ServerWorld world, BuilderdashMap map, C config) {
         this.gameSpace = gameSpace;
         this.map = map;
@@ -99,10 +103,11 @@ public class BDLobbyActivity<C extends BDGameConfig> {
 
             game.deny(GameRuleType.PVP).deny(GameRuleType.FALL_DAMAGE).deny(GameRuleType.HUNGER)
                     .deny(GameRuleType.CRAFTING).deny(GameRuleType.PORTALS).deny(GameRuleType.THROW_ITEMS)
-                    .deny(GameRuleType.PLACE_BLOCKS).deny(GameRuleType.BREAK_BLOCKS);
+                    .deny(GameRuleType.PLACE_BLOCKS).deny(GameRuleType.BREAK_BLOCKS).deny(GameRuleType.UNSTABLE_TNT);
 
             game.allow(GameRuleType.INTERACTION);
             game.deny(GameRuleType.USE_ITEMS).deny(GameRuleType.USE_ENTITIES);
+            game.listen(ExplosionDetonatedEvent.EVENT, (explosion, blocksToDestroy) -> explosion.clearAffectedBlocks());
             game.listen(BlockUseEvent.EVENT, (player, hand, hitResult) -> {
                 var state = player.getWorld().getBlockState(hitResult.getBlockPos());
                 if (state.isIn(BlockTags.BUTTONS) || state.isOf(Blocks.CHEST) || state.isOf(Blocks.BARREL)) {
@@ -144,6 +149,11 @@ public class BDLobbyActivity<C extends BDGameConfig> {
 
     private void tick() {
         var countdown = this.config.getLobbyConfig().countdown();
+
+        if (!titleSpawned) {
+            config.makeTitle(this.map.titlePos, 12, new Quaternionf().rotateLocalX(0.5f)).spawn(world);
+            titleSpawned = true;
+        }
 
         if (this.proportionReady < 0.5) {
             boolean update = this.timeUntilStart < countdown.fullSeconds() * SEC;
@@ -209,7 +219,7 @@ public class BDLobbyActivity<C extends BDGameConfig> {
             }
 
             this.bossBar.setProgress((float) this.timeUntilStart / (this.config.getLobbyConfig().countdown().fullSeconds() * SEC));
-            this.bossBar.setTitle(timerBar ? Text.translatable("text.plasmid.game.waiting_lobby.bar.countdown", this.timeUntilStart / SEC)
+            this.bossBar.setTitle(timerBar ? Text.translatable(STARTING_IN, this.timeUntilStart / SEC)
                     : WAITING);
             this.bossBar.setStyle(BossBar.Color.BLUE, timerBar ? BossBar.Style.NOTCHED_20 : BossBar.Style.PROGRESS);
         }
