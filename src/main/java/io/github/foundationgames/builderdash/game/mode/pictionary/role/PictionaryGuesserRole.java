@@ -32,7 +32,7 @@ public class PictionaryGuesserRole extends PlayerRole.Flying {
             return false;
         }
 
-        if (this.pictionary.currentWord != null) {
+        if (this.pictionary.allowGuessing() && this.pictionary.currentWord != null) {
             var guess = signedMessage.getSignedContent();
 
             int maxCloseness = pictionary.config.guessCloseness();

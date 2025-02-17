@@ -5,10 +5,13 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.foundationgames.builderdash.Builderdash;
 import io.github.foundationgames.builderdash.game.BDGameConfig;
+import io.github.foundationgames.builderdash.game.element.title.StyledTitle;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMapConfig;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.Vec3d;
+import org.joml.Quaternionf;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.common.config.WaitingLobbyConfig;
 
@@ -44,6 +47,11 @@ public record BDTelephoneConfig(
     @Override
     public String getGameName() {
         return TELEPHONE;
+    }
+
+    @Override
+    public StyledTitle makeTitle(Vec3d pos, float scale, Quaternionf rot) {
+        return StyledTitle.forMinigame(pos, scale, rot, TELEPHONE, 0x8a24ff);
     }
 
     @Override

@@ -38,6 +38,8 @@ public record BuilderdashMapConfig(int time, Identifier mapId) {
         var singleZone = BuildZone.get(mapId(), template, "singlezone", SINGLE_DISPLAY);
         var doubleZone = BuildZone.get(mapId(), template, "doublezone", DOUBLE_DISPLAY);
 
-        return new BuilderdashMap(template, this, spawnRegion.getBounds(), buildZonesStart.getBounds().min(), privateZoneTemplate, singleZone, doubleZone);
+        var title = BDUtil.regionOrThrow(mapId(), template, "title");
+
+        return new BuilderdashMap(template, this, spawnRegion.getBounds(), buildZonesStart.getBounds().min(), privateZoneTemplate, singleZone, doubleZone, title.getBounds().center());
     }
 }

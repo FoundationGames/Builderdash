@@ -20,6 +20,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
+import org.joml.Quaternionf;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
 import xyz.nucleoid.plasmid.api.game.GameActivity;
 import xyz.nucleoid.plasmid.api.game.GameOpenContext;
@@ -72,6 +73,8 @@ public class BDLobbyActivity<C extends BDGameConfig> {
     private final Object2ObjectMap<PlayerRef, LobbyPlayer> players = new Object2ObjectOpenHashMap<>();
     private int timeUntilStart = Integer.MAX_VALUE;
     private float proportionReady = 0f;
+
+    private boolean titleSpawned = false;
 
     private BDLobbyActivity(GameSpace gameSpace, GameActivity game, ServerWorld world, BuilderdashMap map, C config) {
         this.gameSpace = gameSpace;
@@ -145,6 +148,11 @@ public class BDLobbyActivity<C extends BDGameConfig> {
 
     private void tick() {
         var countdown = this.config.getLobbyConfig().countdown();
+
+        if (!titleSpawned) {
+            config.makeTitle(this.map.titlePos, 12, new Quaternionf().rotateLocalX(0.5f)).spawn(world);
+            titleSpawned = true;
+        }
 
         if (this.proportionReady < 0.5) {
             boolean update = this.timeUntilStart < countdown.fullSeconds() * SEC;

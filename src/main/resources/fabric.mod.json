@@ -8,6 +8,7 @@
     "FoundationGames"
   ],
   "license": "LGPLv3",
+  "icon": "assets/builderdash/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": [

@@ -6,11 +6,14 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.foundationgames.builderdash.Builderdash;
 import io.github.foundationgames.builderdash.game.BDCustomWordsConfig;
 import io.github.foundationgames.builderdash.game.CustomWordsPersistentState;
+import io.github.foundationgames.builderdash.game.element.title.StyledTitle;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMapConfig;
 import io.github.foundationgames.builderdash.game.mode.pictionary.WordList;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.Vec3d;
+import org.joml.Quaternionf;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.common.config.WaitingLobbyConfig;
 
@@ -51,6 +54,11 @@ public record BDVersusConfig(
     @Override
     public String getGameName() {
         return VERSUS;
+    }
+
+    @Override
+    public StyledTitle makeTitle(Vec3d pos, float scale, Quaternionf rot) {
+        return StyledTitle.forMinigame(pos, scale, rot, VERSUS, 0xffa200);
     }
 
     @Override

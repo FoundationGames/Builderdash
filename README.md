@@ -1,4 +1,4 @@
-# Builderdash
+![Builderdash](logo.png)
 
 Building-related party minigames for Minecraft, using Plasmid API on Fabric
 

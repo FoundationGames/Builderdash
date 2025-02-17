@@ -90,6 +90,10 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
         gameSpace.setActivity(game -> new BDPictionaryActivity(gameSpace, game, world, map, config));
     }
 
+    public boolean allowGuessing() {
+        return phase == Phase.BUILDING;
+    }
+
     public void onPlayerCorrectGuess(BDPlayer player) {
         player.player.ifOnline(this.gameSpace, s -> this.gameSpace.getPlayers().sendMessage(
                 Text.translatable(GUESSED_WORD, s.getDisplayName()).formatted(Formatting.GREEN)));
