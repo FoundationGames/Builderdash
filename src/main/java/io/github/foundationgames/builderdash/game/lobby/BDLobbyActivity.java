@@ -40,6 +40,7 @@ import xyz.nucleoid.stimuli.event.EventResult;
 import xyz.nucleoid.stimuli.event.block.BlockUseEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerC2SPacketEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
+import xyz.nucleoid.stimuli.event.world.ExplosionDetonatedEvent;
 
 public class BDLobbyActivity<C extends BDGameConfig> {
     public static final Text WAITING = Text.translatable("text.plasmid.game.waiting_lobby.bar.waiting");
@@ -103,10 +104,11 @@ public class BDLobbyActivity<C extends BDGameConfig> {
 
             game.deny(GameRuleType.PVP).deny(GameRuleType.FALL_DAMAGE).deny(GameRuleType.HUNGER)
                     .deny(GameRuleType.CRAFTING).deny(GameRuleType.PORTALS).deny(GameRuleType.THROW_ITEMS)
-                    .deny(GameRuleType.PLACE_BLOCKS).deny(GameRuleType.BREAK_BLOCKS);
+                    .deny(GameRuleType.PLACE_BLOCKS).deny(GameRuleType.BREAK_BLOCKS).deny(GameRuleType.UNSTABLE_TNT);
 
             game.allow(GameRuleType.INTERACTION);
             game.deny(GameRuleType.USE_ITEMS).deny(GameRuleType.USE_ENTITIES);
+            game.listen(ExplosionDetonatedEvent.EVENT, (explosion, blocksToDestroy) -> EventResult.DENY);
             game.listen(BlockUseEvent.EVENT, (player, hand, hitResult) -> {
                 var state = player.getWorld().getBlockState(hitResult.getBlockPos());
                 if (state.isIn(BlockTags.BUTTONS) || state.isOf(Blocks.CHEST) || state.isOf(Blocks.BARREL)) {
@@ -218,7 +220,7 @@ public class BDLobbyActivity<C extends BDGameConfig> {
             }
 
             this.bossBar.setProgress((float) this.timeUntilStart / (this.config.getLobbyConfig().countdown().fullSeconds() * SEC));
-            this.bossBar.setTitle(timerBar ? Text.translatable("text.plasmid.game.waiting_lobby.bar.countdown", this.timeUntilStart / SEC)
+            this.bossBar.setTitle(timerBar ? Text.translatable(STARTING_IN, this.timeUntilStart / SEC)
                     : WAITING);
             this.bossBar.setStyle(BossBar.Color.BLUE, timerBar ? BossBar.Style.NOTCHED_20 : BossBar.Style.PROGRESS);
         }
