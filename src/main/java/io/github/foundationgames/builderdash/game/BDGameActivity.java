@@ -14,6 +14,8 @@ import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.mob.MobEntity;
+import net.minecraft.item.ChorusFruitItem;
+import net.minecraft.item.EnderPearlItem;
 import net.minecraft.network.message.MessageType;
 import net.minecraft.network.message.SignedMessage;
 import net.minecraft.registry.tag.DamageTypeTags;
@@ -22,6 +24,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
@@ -47,6 +50,7 @@ import xyz.nucleoid.stimuli.event.block.FlowerPotModifyEvent;
 import xyz.nucleoid.stimuli.event.block.FluidPlaceEvent;
 import xyz.nucleoid.stimuli.event.entity.EntitySpawnEvent;
 import xyz.nucleoid.stimuli.event.entity.EntityUseEvent;
+import xyz.nucleoid.stimuli.event.item.ItemUseEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerAttackEntityEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDamageEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
@@ -180,6 +184,15 @@ public class BDGameActivity<C extends BDGameConfig> {
                 mob.setAiDisabled(true);
             }
             return ActionResult.PASS;
+        });
+        game.listen(ItemUseEvent.EVENT, (player, hand) -> {
+            var stack = player.getStackInHand(hand);
+            var item = stack.getItem();
+            if (item instanceof EnderPearlItem || item instanceof ChorusFruitItem) {
+                return TypedActionResult.fail(stack);
+            }
+
+            return TypedActionResult.pass(stack);
         });
 
         game.listen(ReplacePlayerChatEvent.EVENT, this::consumeChatMessage);
