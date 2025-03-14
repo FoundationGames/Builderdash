@@ -12,10 +12,10 @@ import io.github.foundationgames.builderdash.game.map.BuilderdashMapConfig;
 import io.github.foundationgames.builderdash.game.mode.pictionary.WordList;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
-import xyz.nucleoid.plasmid.api.game.GameSpace;
-import xyz.nucleoid.plasmid.api.game.common.config.WaitingLobbyConfig;
 import net.minecraft.util.math.Vec3d;
 import org.joml.Quaternionf;
+import xyz.nucleoid.plasmid.api.game.GameSpace;
+import xyz.nucleoid.plasmid.api.game.common.config.WaitingLobbyConfig;
 
 import java.util.ArrayList;
 

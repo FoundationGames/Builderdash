@@ -4,10 +4,10 @@ import io.github.foundationgames.builderdash.game.element.title.StyledTitle;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMapConfig;
 import net.minecraft.server.world.ServerWorld;
-import xyz.nucleoid.plasmid.api.game.GameSpace;
-import xyz.nucleoid.plasmid.api.game.common.config.WaitingLobbyConfig;
 import net.minecraft.util.math.Vec3d;
 import org.joml.Quaternionf;
+import xyz.nucleoid.plasmid.api.game.GameSpace;
+import xyz.nucleoid.plasmid.api.game.common.config.WaitingLobbyConfig;
 
 public interface BDGameConfig {
     BuilderdashMapConfig getMapConfig();

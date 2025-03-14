@@ -10,10 +10,10 @@ import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMapConfig;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
-import xyz.nucleoid.plasmid.api.game.GameSpace;
-import xyz.nucleoid.plasmid.api.game.common.config.WaitingLobbyConfig;
 import net.minecraft.util.math.Vec3d;
 import org.joml.Quaternionf;
+import xyz.nucleoid.plasmid.api.game.GameSpace;
+import xyz.nucleoid.plasmid.api.game.common.config.WaitingLobbyConfig;
 
 public record BDTelephoneConfig(
         WaitingLobbyConfig players, int buildTime, int guessTime, boolean doubleRounds, BuilderdashMapConfig map
