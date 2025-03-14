@@ -1,8 +1,8 @@
 package io.github.foundationgames.builderdash.game.lobby;
 
 import io.github.foundationgames.builderdash.game.lobby.ui.LobbyGui;
-import xyz.nucleoid.plasmid.game.GameSpace;
-import xyz.nucleoid.plasmid.util.PlayerRef;
+import xyz.nucleoid.plasmid.api.game.GameSpace;
+import xyz.nucleoid.plasmid.api.util.PlayerRef;
 
 public class LobbyPlayer {
     public final BDLobbyActivity<?> lobby;

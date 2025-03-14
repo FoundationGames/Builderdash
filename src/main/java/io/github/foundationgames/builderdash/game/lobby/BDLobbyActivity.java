@@ -22,27 +22,27 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
 import org.joml.Quaternionf;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
-import xyz.nucleoid.plasmid.game.GameActivity;
-import xyz.nucleoid.plasmid.game.GameOpenContext;
-import xyz.nucleoid.plasmid.game.GameOpenProcedure;
-import xyz.nucleoid.plasmid.game.GameResult;
-import xyz.nucleoid.plasmid.game.GameSpace;
-import xyz.nucleoid.plasmid.game.common.GlobalWidgets;
-import xyz.nucleoid.plasmid.game.common.widget.BossBarWidget;
-import xyz.nucleoid.plasmid.game.common.widget.SidebarWidget;
-import xyz.nucleoid.plasmid.game.config.GameConfig;
-import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
-import xyz.nucleoid.plasmid.game.event.GamePlayerEvents;
-import xyz.nucleoid.plasmid.game.player.JoinOffer;
-import xyz.nucleoid.plasmid.game.rule.GameRuleType;
-import xyz.nucleoid.plasmid.util.PlayerRef;
+import xyz.nucleoid.plasmid.api.game.GameActivity;
+import xyz.nucleoid.plasmid.api.game.GameOpenContext;
+import xyz.nucleoid.plasmid.api.game.GameOpenProcedure;
+import xyz.nucleoid.plasmid.api.game.GameResult;
+import xyz.nucleoid.plasmid.api.game.GameSpace;
+import xyz.nucleoid.plasmid.api.game.common.GlobalWidgets;
+import xyz.nucleoid.plasmid.api.game.common.widget.BossBarWidget;
+import xyz.nucleoid.plasmid.api.game.common.widget.SidebarWidget;
+import xyz.nucleoid.plasmid.api.game.config.GameConfig;
+import xyz.nucleoid.plasmid.api.game.event.GameActivityEvents;
+import xyz.nucleoid.plasmid.api.game.event.GamePlayerEvents;
+import xyz.nucleoid.plasmid.api.game.player.JoinOffer;
+import xyz.nucleoid.plasmid.api.game.rule.GameRuleType;
+import xyz.nucleoid.plasmid.api.util.PlayerRef;
 import xyz.nucleoid.stimuli.event.block.BlockUseEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerC2SPacketEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 import xyz.nucleoid.stimuli.event.world.ExplosionDetonatedEvent;
 
 public class BDLobbyActivity<C extends BDGameConfig> {
-    public static final Text WAITING = Text.translatable("text.plasmid.game.waiting_lobby.bar.waiting");
+    public static final Text WAITING = Text.translatable("text.plasmid.api.game.waiting_lobby.bar.waiting");
     public static final Text NOT_ENOUGH_PLAYERS = Text.translatable("label.builderdash.lobby.not_enough_players").formatted(Formatting.YELLOW);
     public static final Text[] NOT_ENOUGH_READY = {
             Text.translatable("label.builderdash.lobby.not_enough_ready.1").formatted(Formatting.YELLOW),
@@ -58,7 +58,7 @@ public class BDLobbyActivity<C extends BDGameConfig> {
     };
 
     public static final String PLAYERS_READY = "label.builderdash.lobby.players_ready";
-    public static final String STARTING_IN = "text.plasmid.game.waiting_lobby.bar.countdown";
+    public static final String STARTING_IN = "text.plasmid.api.game.waiting_lobby.bar.countdown";
 
     public static final int SEC = 20;
 

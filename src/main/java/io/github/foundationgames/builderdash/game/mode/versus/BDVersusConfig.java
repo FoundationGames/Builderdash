@@ -12,15 +12,15 @@ import io.github.foundationgames.builderdash.game.map.BuilderdashMapConfig;
 import io.github.foundationgames.builderdash.game.mode.pictionary.WordList;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
-import xyz.nucleoid.plasmid.game.GameSpace;
-import xyz.nucleoid.plasmid.game.common.config.PlayerConfig;
+import xyz.nucleoid.plasmid.api.game.GameSpace;
+import xyz.nucleoid.plasmid.api.game.common.config.WaitingLobbyConfig;
 import net.minecraft.util.math.Vec3d;
 import org.joml.Quaternionf;
 
 import java.util.ArrayList;
 
 public record BDVersusConfig(
-        PlayerConfig players, WordList wordList, int buildTime, int voteTime, float pointRoundMul,
+        WaitingLobbyConfig players, WordList wordList, int buildTime, int voteTime, float pointRoundMul,
         boolean doubleRounds, BuilderdashMapConfig map
 ) implements BDCustomWordsConfig<BDVersusConfig> {
     public static final String VERSUS = "versus";
@@ -32,7 +32,7 @@ public record BDVersusConfig(
     public static final Identifier TEST_CONFIG = Builderdash.id("versus_test");
 
     public static final MapCodec<BDVersusConfig> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            PlayerConfig.CODEC.fieldOf("players").forGetter(BDVersusConfig::players),
+            WaitingLobbyConfig.CODEC.fieldOf("players").forGetter(BDVersusConfig::players),
             WordList.CODEC.fieldOf("prompt_list").forGetter(BDVersusConfig::wordList),
             Codec.INT.fieldOf("build_time").forGetter(BDVersusConfig::buildTime),
             Codec.INT.fieldOf("vote_time").forGetter(BDVersusConfig::voteTime),
@@ -47,7 +47,7 @@ public record BDVersusConfig(
     }
 
     @Override
-    public PlayerConfig getLobbyConfig() {
+    public WaitingLobbyConfig getLobbyConfig() {
         return players();
     }
 

@@ -20,7 +20,6 @@ repositories {
         url = "https://maven.nucleoid.xyz/"
     }
     mavenCentral()
-    mavenLocal()
 }
 
 dependencies {

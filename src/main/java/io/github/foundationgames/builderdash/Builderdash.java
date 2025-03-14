@@ -22,12 +22,12 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.util.Identifier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import xyz.nucleoid.plasmid.game.GameTexts;
-import xyz.nucleoid.plasmid.game.GameType;
-import xyz.nucleoid.plasmid.game.config.CustomValuesConfig;
-import xyz.nucleoid.plasmid.game.config.GameConfig;
-import xyz.nucleoid.plasmid.game.config.GameConfigs;
-import xyz.nucleoid.plasmid.game.manager.GameSpaceManager;
+import xyz.nucleoid.plasmid.api.game.GameSpaceManager;
+import xyz.nucleoid.plasmid.api.game.GameTexts;
+import xyz.nucleoid.plasmid.api.game.GameType;
+import xyz.nucleoid.plasmid.api.game.config.CustomValuesConfig;
+import xyz.nucleoid.plasmid.api.game.config.GameConfig;
+import xyz.nucleoid.plasmid.api.game.config.GameConfigs;
 
 public class Builderdash implements ModInitializer {
     public static final String ID = "builderdash";
