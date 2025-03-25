@@ -25,7 +25,7 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import xyz.nucleoid.map_templates.BlockBounds;
-import xyz.nucleoid.plasmid.util.PlayerRef;
+import xyz.nucleoid.plasmid.api.util.PlayerRef;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;

@@ -20,7 +20,6 @@ repositories {
         url = "https://maven.nucleoid.xyz/"
     }
     mavenCentral()
-    mavenLocal()
 }
 
 dependencies {
@@ -33,7 +32,10 @@ dependencies {
     modImplementation("net.fabricmc.fabric-api:fabric-api:${project.fabric_version}")
 
     // Plasmid
-    include(modImplementation("xyz.nucleoid:plasmid:${project.plasmid_version}"))
+    include(modImplementation("xyz.nucleoid:plasmid:${project.plasmid_version}") {
+        exclude group: 'xyz.nucleoid', module: 'packet-tweaker'
+    })
+    include(modImplementation("xyz.nucleoid:packet-tweaker:0.5.5+1.21"))
 
     // Permissions
     include(modImplementation("me.lucko:fabric-permissions-api:${project.permissions_version}"))
