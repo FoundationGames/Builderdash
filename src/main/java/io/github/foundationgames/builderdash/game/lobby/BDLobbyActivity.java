@@ -42,7 +42,7 @@ import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 import xyz.nucleoid.stimuli.event.world.ExplosionDetonatedEvent;
 
 public class BDLobbyActivity<C extends BDGameConfig> {
-    public static final Text WAITING = Text.translatable("text.plasmid.api.game.waiting_lobby.bar.waiting");
+    public static final Text WAITING = Text.translatable("text.plasmid.game.waiting_lobby.bar.waiting");
     public static final Text NOT_ENOUGH_PLAYERS = Text.translatable("label.builderdash.lobby.not_enough_players").formatted(Formatting.YELLOW);
     public static final Text[] NOT_ENOUGH_READY = {
             Text.translatable("label.builderdash.lobby.not_enough_ready.1").formatted(Formatting.YELLOW),
@@ -58,7 +58,7 @@ public class BDLobbyActivity<C extends BDGameConfig> {
     };
 
     public static final String PLAYERS_READY = "label.builderdash.lobby.players_ready";
-    public static final String STARTING_IN = "text.plasmid.api.game.waiting_lobby.bar.countdown";
+    public static final String STARTING_IN = "text.plasmid.game.waiting_lobby.bar.countdown";
 
     public static final int SEC = 20;
 
