@@ -11,6 +11,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.Vec3d;
+import xyz.nucleoid.plasmid.impl.game.common.ui.element.LeaveGameWaitingLobbyUiElement;
 
 public class LobbyGui extends HotbarGui {
     public static final Text YOU_ARE_READY = Text.translatable("item.builderdash.lobby.you_are_ready").formatted(Formatting.AQUA);
@@ -24,7 +25,7 @@ public class LobbyGui extends HotbarGui {
         this.player = lobbyPlayer;
         this.updateReadyItem();
 
-        // this.setSlot(8, new LeaveGameWaitingLobbyUiElement(lobbyPlayer.lobby.gameSpace, player).createMainElement());
+        this.setSlot(8, new LeaveGameWaitingLobbyUiElement(lobbyPlayer.lobby.gameSpace, player).createMainElement());
     }
 
     public void updateReadyItem() {
