@@ -11,7 +11,6 @@ import io.github.foundationgames.builderdash.game.CustomWordsPersistentState;
 import net.minecraft.command.CommandSource;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 
 import java.io.IOException;
 import java.util.ArrayList;

@@ -3,9 +3,7 @@ package io.github.foundationgames.builderdash.config;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.command.CommandSource;
-import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Text;
-import net.minecraft.text.Texts;
 import net.minecraft.util.Formatting;
 
 import java.util.function.BiConsumer;

@@ -20,7 +20,6 @@ import net.minecraft.item.EnderPearlItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.consume.TeleportRandomlyConsumeEffect;
-import net.minecraft.network.PacketCallbacks;
 import net.minecraft.network.message.MessageType;
 import net.minecraft.network.message.SignedMessage;
 import net.minecraft.network.packet.c2s.play.CreativeInventoryActionC2SPacket;
