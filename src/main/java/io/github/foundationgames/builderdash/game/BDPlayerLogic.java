@@ -10,6 +10,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.random.Random;
 import net.minecraft.world.GameMode;
 import org.jetbrains.annotations.Nullable;
 import xyz.nucleoid.map_templates.BlockBounds;
@@ -51,9 +52,7 @@ public class BDPlayerLogic {
         ));
     }
 
-    public void spawnPlayer(ServerPlayerEntity player, BlockBounds bounds, Vec3d lookAt) {
-        var random = player.getRandom();
-
+    public Vec3d getSpawnPos(Random random, BlockBounds bounds) {
         var minPos = bounds.min();
         var maxPos = bounds.max();
 
@@ -62,8 +61,8 @@ public class BDPlayerLogic {
                 minPos.getY(),
                 random.nextBetween(minPos.getZ(), maxPos.getZ()));
 
-        float x = pos.getX() + MathHelper.nextFloat(player.getRandom(), -0.5f, 0.5f);
-        float z = pos.getZ() + MathHelper.nextFloat(player.getRandom(), -0.5f, 0.5f);
+        double x = pos.getX() + MathHelper.nextDouble(random, -0.5, 0.5);
+        double z = pos.getZ() + MathHelper.nextDouble(random, -0.5, 0.5);
 
         var mpos = new BlockPos.Mutable();
         mpos.set(pos);
@@ -78,9 +77,14 @@ public class BDPlayerLogic {
             mpos.move(Direction.UP);
         }
 
-        var disp = lookAt.subtract(x, 0, z);
+        return new Vec3d(x, mpos.getY() + 0.1, z);
+    }
 
-        player.teleport(this.world, x, mpos.getY() + 0.1, z, Set.of(),
+    public void spawnPlayer(ServerPlayerEntity player, BlockBounds bounds, Vec3d lookAt) {
+        var pos = getSpawnPos(player.getRandom(), bounds);
+        var disp = lookAt.subtract(pos.getX(), 0, pos.getZ());
+
+        player.teleport(this.world, pos.getX(), pos.getY(), pos.getZ(), Set.of(),
                 (float) Math.toDegrees(Math.atan2(-disp.getZ(), -disp.getX())) + 90, 0, true);
     }
 }

@@ -70,7 +70,7 @@ public class Builderdash implements ModInitializer {
         if (value != null) {
             if (value.config() instanceof BDCustomWordsConfig<?> config) {
                 value = new GameConfig<>((GameType<Object>) value.type(), null, null, null, null, CustomValuesConfig.empty(),
-                        config.withCustomWords(CustomWordsPersistentState.get(server, CustomWordsPersistentState.getKeyForGame(config.getGameName()))));
+                        config.withCustomWords(CustomWordsPersistentState.get(server, CustomWordsPersistentState.getTypeForGame(config.getGameName()))));
             }
 
             // TODO: Handle errors?

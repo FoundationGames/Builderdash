@@ -136,9 +136,13 @@ public class BDLobbyActivity<C extends BDGameConfig> {
             game.listen(GamePlayerEvents.ADD, lobby::addPlayer);
             game.listen(GamePlayerEvents.REMOVE, lobby::removePlayer);
             game.listen(GamePlayerEvents.OFFER, JoinOffer::pass);
-            game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, Vec3d.ZERO));
+            game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, lobby.getSpawnPos()));
             game.listen(PlayerDeathEvent.EVENT, lobby::onPlayerDeath);
         });
+    }
+
+    private Vec3d getSpawnPos() {
+        return this.playerLogic.getSpawnPos(this.world.getRandom(), this.map.spawn);
     }
 
     private GameResult requestStart() {

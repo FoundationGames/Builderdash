@@ -65,7 +65,7 @@ public abstract class ConfigOption<T> {
     public Text getCopyableValueText() {
         var value = getString();
         return Text.literal(value).styled(s ->
-                s.withColor(0x8fabff).withClickEvent(new ClickEvent(net.minecraft.text.ClickEvent.Action.COPY_TO_CLIPBOARD, value))
+                s.withColor(0x8fabff).withClickEvent(new ClickEvent.CopyToClipboard(value))
         );
     }
 

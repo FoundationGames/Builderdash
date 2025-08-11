@@ -2,39 +2,58 @@ package io.github.foundationgames.builderdash.game;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.foundationgames.builderdash.BDUtil;
 import io.github.foundationgames.builderdash.Builderdash;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtString;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.world.PersistentState;
+import net.minecraft.world.PersistentStateType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class CustomWordsPersistentState extends PersistentState {
     public static final String SPLIT_STRING_LIST = "[,\\n] ?+";
 
-    public static final PersistentState.Type<CustomWordsPersistentState> TYPE = new PersistentState.Type<>(
-            CustomWordsPersistentState::new,
-            CustomWordsPersistentState::readNbt,
-            null
-    );
+    public static final Codec<String[]> WORD_CODEC = Codec.STRING.xmap(
+            ws -> ws.split("="),
+            wl -> String.join("=", wl));
+
+    public static final Codec<CustomWordsPersistentState> CODEC = RecordCodecBuilder.create(inst -> inst.group(
+            Codec.list(WORD_CODEC).fieldOf("custom_words").forGetter(s -> s.customWords),
+            Codec.BOOL.fieldOf("replace_default").forGetter(s -> s.replaceDefault)
+    ).apply(inst, CustomWordsPersistentState::new));
+
+    public static final Map<String, PersistentStateType<CustomWordsPersistentState>> TYPES = new HashMap<>();
 
     public final List<String[]> customWords = new ArrayList<>();
     public boolean replaceDefault;
 
-    public static CustomWordsPersistentState get(MinecraftServer server, String key) {
-        return server.getOverworld().getPersistentStateManager().getOrCreate(TYPE, key);
+    public CustomWordsPersistentState() {
     }
 
-    public static String getKeyForGame(String game) {
-        return String.format(Builderdash.ID + "_%s_custom_words", game);
+    public CustomWordsPersistentState(List<String[]> words, boolean replace) {
+        this.customWords.addAll(words);
+        this.replaceDefault = replace;
+    }
+
+    public static CustomWordsPersistentState get(MinecraftServer server, PersistentStateType<CustomWordsPersistentState> type) {
+        return server.getOverworld().getPersistentStateManager().getOrCreate(type);
+    }
+
+    public static PersistentStateType<CustomWordsPersistentState> getTypeForGame(String game) {
+        return TYPES.computeIfAbsent(game, k -> new PersistentStateType<>(
+                String.format(Builderdash.ID + "_%s_custom_words", k),
+                CustomWordsPersistentState::new,
+                CODEC,
+                null
+        ));
     }
 
     public int setWords(String delimitedWordList) {
@@ -72,33 +91,6 @@ public class CustomWordsPersistentState extends PersistentState {
         this.markDirty();
     }
 
-    @Override
-    public NbtCompound writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registries) {
-        nbt.putBoolean("replace_default", this.replaceDefault);
-
-        var list = new NbtList();
-        for (var word : this.customWords) {
-            list.add(NbtString.of(String.join("=", word)));
-        }
-        nbt.put("custom_words", list);
-
-        return nbt;
-    }
-
-    public static CustomWordsPersistentState readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registries) {
-        var state = new CustomWordsPersistentState();
-        state.replaceDefault = nbt.getBoolean("replace_default");
-
-        var list = nbt.getList("custom_words", NbtCompound.STRING_TYPE);
-        for (var wordNbt : list) {
-            if (wordNbt instanceof NbtString wordStr) {
-                state.customWords.add(wordStr.asString().split("="));
-            }
-        }
-
-        return state;
-    }
-
     public static final String WORD_LIST_ADD = "command.builderdash.word_list_add";
     public static final String WORD_LIST_SET = "command.builderdash.word_list_set";
     public static final String WORD_LIST_GET_NO_DEFAULT = "command.builderdash.word_list_get_count_no_default";
@@ -108,7 +100,7 @@ public class CustomWordsPersistentState extends PersistentState {
 
     public static LiteralArgumentBuilder<ServerCommandSource> createCommand(LiteralArgumentBuilder<ServerCommandSource> command, String game) {
         var gameName = Text.translatable("name." + Builderdash.ID + "." + game);
-        var key = getKeyForGame(game);
+        var type = getTypeForGame(game);
         var perm = BDUtil.permission(game, BDUtil.PERM_GAME_EDIT, 2);
 
         return command
@@ -116,7 +108,7 @@ public class CustomWordsPersistentState extends PersistentState {
                         .then(CommandManager.argument("word_list", StringArgumentType.greedyString())
                                 .executes(cmd -> {
                                     var wordList = cmd.getArgument("word_list", String.class);
-                                    var customWords = CustomWordsPersistentState.get(cmd.getSource().getServer(), key);
+                                    var customWords = get(cmd.getSource().getServer(), type);
 
                                     int ct = customWords.setWords(wordList);
                                     cmd.getSource().sendFeedback(() -> Text.translatable(WORD_LIST_SET, gameName, ct), true);
@@ -128,7 +120,7 @@ public class CustomWordsPersistentState extends PersistentState {
                         .then(CommandManager.argument("word_list", StringArgumentType.greedyString())
                                 .executes(cmd -> {
                                     var wordList = cmd.getArgument("word_list", String.class);
-                                    var customWords = CustomWordsPersistentState.get(cmd.getSource().getServer(), key);
+                                    var customWords = get(cmd.getSource().getServer(), type);
 
                                     int ct = customWords.addWords(wordList);
                                     cmd.getSource().sendFeedback(() -> Text.translatable(WORD_LIST_ADD, ct, gameName), true);
@@ -138,7 +130,7 @@ public class CustomWordsPersistentState extends PersistentState {
                 )
                 .then(CommandManager.literal("resetwords").requires(perm)
                         .executes(cmd -> {
-                            var customWords = CustomWordsPersistentState.get(cmd.getSource().getServer(), key);
+                            var customWords = get(cmd.getSource().getServer(), type);
 
                             customWords.resetWords();
                             cmd.getSource().sendFeedback(() -> Text.translatable(WORD_LIST_RESET, gameName), true);
@@ -147,7 +139,7 @@ public class CustomWordsPersistentState extends PersistentState {
                 )
                 .then(CommandManager.literal("getwordcount").requires(perm)
                         .executes(cmd -> {
-                            var customWords = CustomWordsPersistentState.get(cmd.getSource().getServer(), key);
+                            var customWords = get(cmd.getSource().getServer(), type);
                             int ct = customWords.customWords.size();
 
                             cmd.getSource().sendFeedback(() ->
@@ -158,7 +150,7 @@ public class CustomWordsPersistentState extends PersistentState {
                 )
                 .then(CommandManager.literal("withdefault").requires(perm)
                         .executes(cmd -> {
-                            var customWords = CustomWordsPersistentState.get(cmd.getSource().getServer(), key);
+                            var customWords = get(cmd.getSource().getServer(), type);
 
                             customWords.addDefaultWords();
                             cmd.getSource().sendFeedback(() -> Text.translatable(WORD_LIST_ADD_DEFAULT, gameName), true);

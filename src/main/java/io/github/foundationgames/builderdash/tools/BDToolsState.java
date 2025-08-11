@@ -406,7 +406,7 @@ public class BDToolsState {
                             }
                         }
 
-                        blacklist = nbt.getBoolean("builderdash:filter");
+                        blacklist = nbt.getBoolean("builderdash:filter").orElse(false);
                         break;
                     }
                 }
