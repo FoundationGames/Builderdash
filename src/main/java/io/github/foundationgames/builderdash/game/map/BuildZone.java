@@ -10,7 +10,11 @@ import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.storage.NbtReadView;
+import net.minecraft.storage.NbtWriteView;
+import net.minecraft.storage.WriteView;
 import net.minecraft.util.CuboidBlockIterator;
+import net.minecraft.util.ErrorReporter;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
@@ -101,7 +105,7 @@ public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, Bl
                 var newBe = beBlock.createBlockEntity(destPos, state);
                 if (newBe != null) {
                     var nbt = be.createNbt(world.getRegistryManager());
-                    newBe.read(nbt, world.getRegistryManager());
+                    newBe.read(NbtReadView.create(ErrorReporter.EMPTY, world.getRegistryManager(), nbt));
 
                     world.addBlockEntity(newBe);
                 }
@@ -126,12 +130,12 @@ public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, Bl
         // Add new copied ones
         entities = world.getOtherEntities(null, new Box(srcMin, srcMax));
         for (var entity : entities) if (!(entity instanceof PlayerEntity)) {
-            var nbt = new NbtCompound();
-            entity.writeNbt(nbt);
+            var data = NbtWriteView.create(ErrorReporter.EMPTY, world.getRegistryManager());
+            entity.writeData(data);
 
             var newEntity = entity.getType().create(world, SpawnReason.COMMAND);
             if (newEntity != null) {
-                newEntity.readNbt(nbt);
+                newEntity.readData(NbtReadView.create(ErrorReporter.EMPTY, world.getRegistryManager(), data.getNbt()));
                 newEntity.setUuid(UUID.randomUUID());
                 newEntity.setPosition(entity.getPos().add(offsetF));
                 world.spawnEntity(newEntity);
