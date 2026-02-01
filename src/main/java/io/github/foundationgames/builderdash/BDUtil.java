@@ -1,5 +1,7 @@
 package io.github.foundationgames.builderdash;
 
+import com.google.common.collect.ImmutableMultimap;
+import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -13,11 +15,11 @@ import net.minecraft.item.Items;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Util;
 import xyz.nucleoid.map_templates.MapTemplate;
 import xyz.nucleoid.map_templates.TemplateRegion;
 import xyz.nucleoid.plasmid.api.game.GameOpenException;
 
-import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
@@ -51,10 +53,11 @@ public enum BDUtil {;
     }
 
     public static ProfileComponent skinProfile(String queryBase64) {
-        var properties = new PropertyMap();
-        properties.put("textures", new Property("textures", queryBase64));
+        var map = ImmutableMultimap.<String, Property>builder();
+        map.put("textures", new Property("textures", queryBase64));
+        var properties = new PropertyMap(map.build());
 
-        return new ProfileComponent(Optional.empty(), Optional.empty(), properties);
+        return ProfileComponent.ofStatic(new GameProfile(Util.NIL_UUID, "", properties));
     }
 
     public static ItemStack customHead(String queryBase64) {

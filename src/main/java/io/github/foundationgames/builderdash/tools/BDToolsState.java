@@ -107,7 +107,7 @@ public class BDToolsState {
         var player = this.player.getEntity(this.server);
         if (player != null) {
             var params = OperationParams.of(player.getInventory());
-            var world = player.getWorld();
+            var world = player.getEntityWorld();
             int[] blocksChanged = {0};
 
             this.audits.audit(world,
@@ -135,7 +135,7 @@ public class BDToolsState {
         var player = this.player.getEntity(this.server);
         if (player != null) {
             var params = OperationParams.of(player.getInventory());
-            var world = player.getWorld();
+            var world = player.getEntityWorld();
             int[] blocksChanged = {0};
 
             double xRad = area.size().getX() * 0.5 + 0.25;
@@ -178,7 +178,7 @@ public class BDToolsState {
         var player = this.player.getEntity(this.server);
         if (player != null) {
             var params = OperationParams.of(player.getInventory());
-            var world = player.getWorld();
+            var world = player.getEntityWorld();
             int[] blocksChanged = {0};
 
             double xRad = area.size().getX() * 0.5 + 0.25;
@@ -219,7 +219,7 @@ public class BDToolsState {
         var player = this.player.getEntity(this.server);
         if (player != null) {
             var params = OperationParams.of(player.getInventory());
-            var world = player.getWorld();
+            var world = player.getEntityWorld();
             int[] blocksChanged = {0};
 
             var area = BlockBounds.of(
@@ -325,7 +325,7 @@ public class BDToolsState {
 
         BDToolsState state;
         if (forPlayer.isEmpty()) {
-            state = new BDToolsState.Conditional(player.getServer(), ref, DEFAULT_MAX_UNDOS, null);
+            state = new BDToolsState.Conditional(player.getEntityWorld().getServer(), ref, DEFAULT_MAX_UNDOS, null);
             forPlayer.addLast(state);
         } else {
             state = forPlayer.getLast();

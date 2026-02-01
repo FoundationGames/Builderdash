@@ -110,7 +110,7 @@ public class BDLobbyActivity<C extends BDGameConfig> {
             game.deny(GameRuleType.USE_ITEMS).deny(GameRuleType.USE_ENTITIES);
             game.listen(ExplosionDetonatedEvent.EVENT, (explosion, blocksToDestroy) -> EventResult.DENY);
             game.listen(BlockUseEvent.EVENT, (player, hand, hitResult) -> {
-                var state = player.getWorld().getBlockState(hitResult.getBlockPos());
+                var state = player.getEntityWorld().getBlockState(hitResult.getBlockPos());
                 if (state.isIn(BlockTags.BUTTONS) || state.isOf(Blocks.CHEST) || state.isOf(Blocks.BARREL)) {
                     return ActionResult.PASS;
                 }

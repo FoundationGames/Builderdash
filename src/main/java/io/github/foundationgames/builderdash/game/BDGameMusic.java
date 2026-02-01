@@ -46,7 +46,7 @@ public record BDGameMusic(List<Entry> musicEntries) {
 
     public record Entry(Identifier soundId, int durationSec) {
         public void play(ServerPlayerEntity player) {
-            var server = player.getServer();
+            var server = player.getEntityWorld().getServer();
             var playerConfig = ServerConfigAccess.forServer(server).getPlayerConfig(player.getUuid());
 
             float volume = (float) playerConfig.musicVolume.get() / 100;

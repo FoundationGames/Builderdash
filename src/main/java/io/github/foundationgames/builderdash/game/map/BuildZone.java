@@ -137,7 +137,7 @@ public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, Bl
             if (newEntity != null) {
                 newEntity.readData(NbtReadView.create(ErrorReporter.EMPTY, world.getRegistryManager(), data.getNbt()));
                 newEntity.setUuid(UUID.randomUUID());
-                newEntity.setPosition(entity.getPos().add(offsetF));
+                newEntity.setPosition(entity.getEntityPos().add(offsetF));
                 world.spawnEntity(newEntity);
             }
 

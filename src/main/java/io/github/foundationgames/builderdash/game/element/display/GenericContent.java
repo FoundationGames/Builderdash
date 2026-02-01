@@ -92,7 +92,7 @@ public class GenericContent extends InWorldDisplay.Content {
         for (var profile : this.playerHeads) {
             var head = new ItemDisplayElement();
             var stack = Items.PLAYER_HEAD.getDefaultStack();
-            stack.set(DataComponentTypes.PROFILE, new ProfileComponent(profile));
+            stack.set(DataComponentTypes.PROFILE, ProfileComponent.ofStatic(profile));
 
             head.setItem(stack);
             head.setScale(new Vector3f(4f));
