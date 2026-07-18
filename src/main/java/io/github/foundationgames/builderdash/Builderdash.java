@@ -18,11 +18,11 @@ import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.util.Identifier;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import xyz.nucleoid.plasmid.api.game.GameTexts;
@@ -55,11 +55,11 @@ public class Builderdash implements ModInitializer {
     );
 
     @SuppressWarnings("unchecked")
-    public static int openBuilderdashGame(ServerCommandSource cmd, Identifier gameConfigId) {
+    public static int openBuilderdashGame(CommandSourceStack cmd, ResourceLocation gameConfigId) {
         var server = cmd.getServer();
-        var key = RegistryKey.of(GameConfigs.REGISTRY_KEY, gameConfigId);
-        var registry = server.getRegistryManager().getOrThrow(GameConfigs.REGISTRY_KEY);
-        var configEntry = registry.getOptional(key).orElse(null);
+        var key = ResourceKey.create(GameConfigs.REGISTRY_KEY, gameConfigId);
+        var registry = server.registryAccess().lookupOrThrow(GameConfigs.REGISTRY_KEY);
+        var configEntry = registry.get(key).orElse(null);
 
         if (configEntry == null) {
             LOG.error("Builtin game config {} not registered!", gameConfigId);
@@ -74,8 +74,8 @@ public class Builderdash implements ModInitializer {
             }
 
             // TODO: Handle errors?
-            GameSpaceManagerImpl.get().open(RegistryEntry.of(value)).thenAccept(space ->
-                    server.getPlayerManager().broadcast(GameTexts.Broadcast.gameOpened(cmd, space), false));
+            GameSpaceManagerImpl.get().open(Holder.direct(value)).thenAccept(space ->
+                    server.getPlayerList().broadcastSystemMessage(GameTexts.Broadcast.gameOpened(cmd, space), false));
             return 0;
         }
 
@@ -86,8 +86,8 @@ public class Builderdash implements ModInitializer {
     @Override
     public void onInitialize() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            var cmd = dispatcher.register(createCommand(CommandManager.literal("builderdash")));
-            dispatcher.register(CommandManager.literal("bd").redirect(cmd));
+            var cmd = dispatcher.register(createCommand(Commands.literal("builderdash")));
+            dispatcher.register(Commands.literal("bd").redirect(cmd));
         });
 
         ServerLifecycleEvents.SERVER_STARTED.register(server -> BDToolsState.onServerStart());
@@ -95,26 +95,26 @@ public class Builderdash implements ModInitializer {
         BDToolsItems.init();
     }
 
-    public static LiteralArgumentBuilder<ServerCommandSource> createCommand(LiteralArgumentBuilder<ServerCommandSource> command) {
+    public static LiteralArgumentBuilder<CommandSourceStack> createCommand(LiteralArgumentBuilder<CommandSourceStack> command) {
         return command
-                .then(PictionaryCommand.createCommand(CommandManager.literal("pictionary")))
-                .then(TelephoneCommand.createCommand(CommandManager.literal("telephone")))
-                .then(VersusCommand.createCommand(CommandManager.literal("versus")))
-                .then(CommandManager.literal("toolbox").executes(ctx -> {
+                .then(PictionaryCommand.createCommand(Commands.literal("pictionary")))
+                .then(TelephoneCommand.createCommand(Commands.literal("telephone")))
+                .then(VersusCommand.createCommand(Commands.literal("versus")))
+                .then(Commands.literal("toolbox").executes(ctx -> {
                     var player = ctx.getSource().getPlayer();
                     BDToolsState.get(player).openToolbox(player);
                     return 0;
                 }))
-                .then(CommandManager.literal("config")
-                        .then(ServerConfigInfo.COMMAND.command(CommandManager.literal("server")
+                .then(Commands.literal("config")
+                        .then(ServerConfigInfo.COMMAND.command(Commands.literal("server")
                                         .requires(src -> Permissions.check(src, BDUtil.PERM_GLOBAL_CONFIG, 4)),
-                                ServerCommandSource::sendMessage))
-                        .then(PlayerConfigInfo.COMMAND.command(CommandManager.literal("player"),
-                                ServerCommandSource::sendMessage))
+                                CommandSourceStack::sendSystemMessage))
+                        .then(PlayerConfigInfo.COMMAND.command(Commands.literal("player"),
+                                CommandSourceStack::sendSystemMessage))
                 );
     }
 
-    public static Identifier id(String path) {
-        return Identifier.of(ID, path);
+    public static ResourceLocation id(String path) {
+        return ResourceLocation.fromNamespaceAndPath(ID, path);
     }
 }

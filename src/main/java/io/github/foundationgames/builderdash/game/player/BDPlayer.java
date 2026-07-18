@@ -1,17 +1,17 @@
 package io.github.foundationgames.builderdash.game.player;
 
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import xyz.nucleoid.plasmid.api.util.PlayerRef;
 
 public class BDPlayer {
-    public final ServerWorld world;
+    public final ServerLevel world;
     public final PlayerRef player;
     public PlayerRole currentRole;
 
     public int score;
 
-    public BDPlayer(ServerWorld world, PlayerRef player) {
+    public BDPlayer(ServerLevel world, PlayerRef player) {
         this.world = world;
         this.player = player;
 
@@ -30,19 +30,19 @@ public class BDPlayer {
         this.currentRole = role;
         this.player.ifOnline(this.world, s -> {
             var m = role.getGameMode();
-            if (s.interactionManager.getGameMode() != m) {
-                s.changeGameMode(m);
+            if (s.gameMode.getGameModeForPlayer() != m) {
+                s.setGameMode(m);
             }
         });
         role.init();
     }
 
-    public Text displayName() {
+    public Component displayName() {
         var p = this.player.getEntity(this.world);
         if (p != null) {
             return p.getDisplayName();
         }
-        return Text.empty();
+        return Component.empty();
     }
 
     public void tick() {

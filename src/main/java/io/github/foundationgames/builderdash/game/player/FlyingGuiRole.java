@@ -1,17 +1,17 @@
 package io.github.foundationgames.builderdash.game.player;
 
 import eu.pb4.sgui.api.gui.GuiInterface;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 
 public abstract class FlyingGuiRole<G extends GuiInterface> extends PlayerRole.Flying {
     private G gui = null;
 
-    public FlyingGuiRole(ServerWorld world, BDPlayer player) {
+    public FlyingGuiRole(ServerLevel world, BDPlayer player) {
         super(world, player);
     }
 
-    protected abstract G createGui(ServerPlayerEntity entity);
+    protected abstract G createGui(ServerPlayer entity);
 
     private G gui() {
         var playerE = this.player.player.getEntity(this.world);

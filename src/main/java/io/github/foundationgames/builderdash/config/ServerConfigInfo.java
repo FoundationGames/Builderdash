@@ -1,16 +1,15 @@
 package io.github.foundationgames.builderdash.config;
 
 import com.mojang.brigadier.context.CommandContext;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.util.WorldSavePath;
-
+import net.minecraft.world.level.storage.LevelResource;
 import java.nio.file.Path;
 import java.util.function.Supplier;
 
 public class ServerConfigInfo {
     public static final Config PROTOTYPE = new ServerConfigInfo(null).config;
-    public static final ConfigCommand<ServerCommandSource> COMMAND =
+    public static final ConfigCommand<CommandSourceStack> COMMAND =
             new ConfigCommand<>(ServerConfigInfo::getConfigForCommand, PROTOTYPE);
 
     public final Config config;
@@ -28,10 +27,10 @@ public class ServerConfigInfo {
     }
 
     public static ServerConfigInfo forServer(MinecraftServer server) {
-        return new ServerConfigInfo(() -> server.getSavePath(WorldSavePath.ROOT).resolve("builderdash/server.properties"));
+        return new ServerConfigInfo(() -> server.getWorldPath(LevelResource.ROOT).resolve("builderdash/server.properties"));
     }
 
-    public static Config getConfigForCommand(CommandContext<ServerCommandSource> context) {
+    public static Config getConfigForCommand(CommandContext<CommandSourceStack> context) {
         return ServerConfigAccess.forServer(context.getSource().getServer()).getServerConfig().config;
     }
 }

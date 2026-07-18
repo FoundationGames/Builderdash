@@ -1,8 +1,8 @@
 package io.github.foundationgames.builderdash.game.element.display;
 
 import eu.pb4.polymer.virtualentity.api.ElementHolder;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3i;
+import net.minecraft.core.Vec3i;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import xyz.nucleoid.map_templates.TemplateRegion;
 
@@ -12,7 +12,7 @@ public class InWorldDisplay extends ElementHolder {
 
     private Content currentContent = null;
 
-    public InWorldDisplay(Vec3d origin, double sizeX, double sizeY) {
+    public InWorldDisplay(Vec3 origin, double sizeX, double sizeY) {
         this.currentPos = origin;
         this.sizeX = sizeX;
         this.sizeY = sizeY;
@@ -22,7 +22,7 @@ public class InWorldDisplay extends ElementHolder {
         var b = region.getBounds();
         double sizeX = b.size().getX();
         double sizeY = b.size().getY();
-        return new InWorldDisplay(Vec3d.of(b.min()), sizeX, sizeY);
+        return new InWorldDisplay(Vec3.atLowerCornerOf(b.min()), sizeX, sizeY);
     }
 
     public InWorldDisplay offsetCopy(Vec3i offset) {

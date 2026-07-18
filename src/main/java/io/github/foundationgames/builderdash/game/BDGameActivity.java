@@ -11,29 +11,7 @@ import io.github.foundationgames.builderdash.game.player.PlayerRole;
 import io.github.foundationgames.builderdash.game.sound.SFX;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.entity.boss.BossBar;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.damage.DamageTypes;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.item.EnderPearlItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.consume.TeleportRandomlyConsumeEffect;
-import net.minecraft.network.message.MessageType;
-import net.minecraft.network.message.SignedMessage;
-import net.minecraft.network.packet.c2s.play.CreativeInventoryActionC2SPacket;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.tag.DamageTypeTags;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.GameMode;
+import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.plasmid.api.game.GameActivity;
@@ -75,28 +53,50 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.ChatType;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.PlayerChatMessage;
+import net.minecraft.network.protocol.game.ServerboundSetCreativeModeSlotPacket;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.BossEvent;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.item.EnderpearlItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.consume_effects.TeleportRandomlyConsumeEffect;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.phys.Vec3;
 
 public class BDGameActivity<C extends BDGameConfig> {
-    public static final AnnouncedTime TIME_ONE_MIN = new AnnouncedTime(60, Formatting.GREEN, SFX.CLICK);
-    public static final AnnouncedTime TIME_THIRTY_SEC = new AnnouncedTime(30, Formatting.YELLOW, SFX.CLICK);
-    public static final AnnouncedTime TIME_TEN_SEC = new AnnouncedTime(30, Formatting.YELLOW, SFX.CLICK);
+    public static final AnnouncedTime TIME_ONE_MIN = new AnnouncedTime(60, ChatFormatting.GREEN, SFX.CLICK);
+    public static final AnnouncedTime TIME_THIRTY_SEC = new AnnouncedTime(30, ChatFormatting.YELLOW, SFX.CLICK);
+    public static final AnnouncedTime TIME_TEN_SEC = new AnnouncedTime(30, ChatFormatting.YELLOW, SFX.CLICK);
     public static final List<AnnouncedTime> COUNTDOWN_FROM_FIVE = List.of(
-            new AnnouncedTime(5, Formatting.GOLD, SFX.NOTE_CLICK),
-            new AnnouncedTime(4, Formatting.GOLD, SFX.NOTE_CLICK),
-            new AnnouncedTime(3, Formatting.RED, SFX.HIGH_CLICK),
-            new AnnouncedTime(2, Formatting.RED, SFX.HIGH_CLICK),
-            new AnnouncedTime(1, Formatting.RED, SFX.HIGH_CLICK)
+            new AnnouncedTime(5, ChatFormatting.GOLD, SFX.NOTE_CLICK),
+            new AnnouncedTime(4, ChatFormatting.GOLD, SFX.NOTE_CLICK),
+            new AnnouncedTime(3, ChatFormatting.RED, SFX.HIGH_CLICK),
+            new AnnouncedTime(2, ChatFormatting.RED, SFX.HIGH_CLICK),
+            new AnnouncedTime(1, ChatFormatting.RED, SFX.HIGH_CLICK)
     );
 
     public static final String QUOTE = "text.builderdash.quote";
     public static final String TIME_REMAINING = "label.builderdash.time_remaining";
     public static final String YOU_ARE_BUILDING = "label.builderdash.you_are_building";
 
-    public static final Text WON_THE_GAME = Text.translatable("title.builderdash.won_the_game").formatted(Formatting.GREEN);
-    public static final Text TYPE_DONE_1 = Text.translatable("label.builderdash.type_done_1").formatted(Formatting.LIGHT_PURPLE);
-    public static final Text TYPE_DONE_2 = Text.translatable("label.builderdash.type_done_2").formatted(Formatting.LIGHT_PURPLE);
-    public static final Text BUILD_PROMPT = Text.translatable("title.builderdash.build_prompt").formatted(Formatting.GREEN);
-    public static final Text ITEM_NOT_ALLOWED = Text.translatable("message.builderdash.item_not_allowed").formatted(Formatting.RED, Formatting.BOLD);
+    public static final Component WON_THE_GAME = Component.translatable("title.builderdash.won_the_game").withStyle(ChatFormatting.GREEN);
+    public static final Component TYPE_DONE_1 = Component.translatable("label.builderdash.type_done_1").withStyle(ChatFormatting.LIGHT_PURPLE);
+    public static final Component TYPE_DONE_2 = Component.translatable("label.builderdash.type_done_2").withStyle(ChatFormatting.LIGHT_PURPLE);
+    public static final Component BUILD_PROMPT = Component.translatable("title.builderdash.build_prompt").withStyle(ChatFormatting.GREEN);
+    public static final Component ITEM_NOT_ALLOWED = Component.translatable("message.builderdash.item_not_allowed").withStyle(ChatFormatting.RED, ChatFormatting.BOLD);
 
     public static final int SEC = 20;
 
@@ -107,13 +107,13 @@ public class BDGameActivity<C extends BDGameConfig> {
 
     public final Object2ObjectMap<PlayerRef, BDPlayer> participants;
     public final BDPlayerLogic playerLogic;
-    public final ServerWorld world;
+    public final ServerLevel world;
     public final GlobalWidgets widgets;
     protected final SidebarWidget scoreboard;
     public final Set<TickingAnimation> animations = new HashSet<>();
     public final BDGameMusic.Playlist musicPlaylist;
     public final Set<String> namespaceBlacklist = new HashSet<>();
-    public final Set<Identifier> itemBlacklist;
+    public final Set<ResourceLocation> itemBlacklist;
 
     protected long nextMusicTrackTime = -1;
 
@@ -128,7 +128,7 @@ public class BDGameActivity<C extends BDGameConfig> {
 
     private final Map<PlayerRef, Set<Item>> pendingInventoryClears = new HashMap<>();
 
-    protected BDGameActivity(GameSpace space, GameActivity game, ServerWorld world, BuilderdashMap map, C config) {
+    protected BDGameActivity(GameSpace space, GameActivity game, ServerLevel world, BuilderdashMap map, C config) {
         Set<PlayerRef> participants = space.getPlayers().participants().stream()
                 .map(PlayerRef::of)
                 .collect(Collectors.toSet());
@@ -147,7 +147,7 @@ public class BDGameActivity<C extends BDGameConfig> {
                 serverConfig.getServerConfig().music.get()
         ));
         this.namespaceBlacklist.addAll(serverConfig.getServerConfig().namespaceBlacklist.get());
-        this.itemBlacklist = serverConfig.getServerConfig().itemBlacklist.get().stream().map(Identifier::tryParse).collect(Collectors.toSet());
+        this.itemBlacklist = serverConfig.getServerConfig().itemBlacklist.get().stream().map(ResourceLocation::tryParse).collect(Collectors.toSet());
 
         this.respawn = map.singleZone;
 
@@ -172,7 +172,7 @@ public class BDGameActivity<C extends BDGameConfig> {
         game.listen(GameActivityEvents.STATE_UPDATE, state -> state.canPlay(false));
 
         game.listen(GamePlayerEvents.OFFER, this::onPlayerOffer);
-        game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, Vec3d.ZERO));
+        game.listen(GamePlayerEvents.ACCEPT, joinAcceptor -> joinAcceptor.teleport(world, Vec3.ZERO));
         game.listen(GamePlayerEvents.ADD, this::addPlayer);
         game.listen(GamePlayerEvents.REMOVE, this::removePlayer);
 
@@ -182,7 +182,7 @@ public class BDGameActivity<C extends BDGameConfig> {
         game.listen(PlayerDeathEvent.EVENT, this::onPlayerDeath);
 
         game.listen(BlockPlaceEvent.BEFORE, (player, world1, pos, state, context) ->
-                this.canPlayerModify(player, context.getBlockPos()));
+                this.canPlayerModify(player, context.getClickedPos()));
         game.listen(FluidPlaceEvent.EVENT, (world1, pos, player, hitResult) ->
                 this.canPlayerModify(player, pos));
         game.listen(BlockBreakEvent.EVENT, (player, world1, pos) ->
@@ -190,53 +190,53 @@ public class BDGameActivity<C extends BDGameConfig> {
         game.listen(BlockUseEvent.EVENT, (player, hand, hitResult) -> {
             var r = this.canPlayerModify(player, hitResult.getBlockPos());
             if (r == EventResult.DENY) {
-                var os = hitResult.getBlockPos().offset(hitResult.getSide());
+                var os = hitResult.getBlockPos().relative(hitResult.getDirection());
                 return this.canPlayerModify(player, os).asActionResult();
             }
             return r.asActionResult();
         });
         game.listen(EntityUseEvent.EVENT, (player, entity, hand, hitResult) ->
-                this.canPlayerModify(player, entity.getBlockPos()));
+                this.canPlayerModify(player, entity.blockPosition()));
         game.listen(FlowerPotModifyEvent.EVENT, (player, hand, hitResult) ->
                 this.canPlayerModify(player, hitResult.getBlockPos()));
         game.listen(BlockTrampleEvent.EVENT, (entity, world1, pos, from, to) -> {
-            if (entity instanceof ServerPlayerEntity player) {
+            if (entity instanceof ServerPlayer player) {
                 return this.canPlayerModify(player, pos);
             }
             return EventResult.PASS;
         });
         game.listen(PlayerAttackEntityEvent.EVENT, (player, hand, attacked, hitResult) ->
-                this.canPlayerModify(player, attacked.getBlockPos()));
+                this.canPlayerModify(player, attacked.blockPosition()));
         game.listen(EntitySpawnEvent.EVENT, entity -> {
-            if (entity instanceof MobEntity mob) {
-                mob.setAiDisabled(true);
+            if (entity instanceof Mob mob) {
+                mob.setNoAi(true);
             }
             return EventResult.PASS;
         });
         game.listen(ItemUseEvent.EVENT, (player, hand) -> {
-            var stack = player.getStackInHand(hand);
-            if (stack.contains(DataComponentTypes.CONSUMABLE)) {
-                var cons = stack.get(DataComponentTypes.CONSUMABLE);
+            var stack = player.getItemInHand(hand);
+            if (stack.has(DataComponents.CONSUMABLE)) {
+                var cons = stack.get(DataComponents.CONSUMABLE);
                 if (cons != null) for (var e : cons.onConsumeEffects()) if (e instanceof TeleportRandomlyConsumeEffect) {
-                    return ActionResult.FAIL;
+                    return InteractionResult.FAIL;
                 }
             }
 
-            if (stack.getItem() instanceof EnderPearlItem) {
-                return ActionResult.FAIL;
+            if (stack.getItem() instanceof EnderpearlItem) {
+                return InteractionResult.FAIL;
             }
 
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
 
         game.listen(PlayerC2SPacketEvent.EVENT, (player, packet) -> {
-            if (packet instanceof CreativeInventoryActionC2SPacket(short slot, ItemStack stack)) {
-                var id = Registries.ITEM.getId(stack.getItem());
+            if (packet instanceof ServerboundSetCreativeModeSlotPacket(short slot, ItemStack stack)) {
+                var id = BuiltInRegistries.ITEM.getKey(stack.getItem());
                 if (this.namespaceBlacklist.contains(id.getNamespace()) || this.itemBlacklist.contains(id)) {
                     this.pendingInventoryClears.computeIfAbsent(PlayerRef.of(player), r -> new HashSet<>())
                             .add(stack.getItem());
 
-                    player.sendMessage(ITEM_NOT_ALLOWED);
+                    player.sendSystemMessage(ITEM_NOT_ALLOWED);
                 }
             }
 
@@ -246,7 +246,7 @@ public class BDGameActivity<C extends BDGameConfig> {
         game.listen(ReplacePlayerChatEvent.EVENT, this::consumeChatMessage);
 
         var titleText = this.gameSpace.getMetadata().sourceConfig().value().type().name().copy();
-        this.scoreboard = this.widgets.addSidebar(titleText.formatted(Formatting.YELLOW));
+        this.scoreboard = this.widgets.addSidebar(titleText.withStyle(ChatFormatting.YELLOW));
     }
 
     protected void onOpen() {
@@ -268,17 +268,17 @@ public class BDGameActivity<C extends BDGameConfig> {
         return offer.acceptSpectators();
     }
 
-    protected void addPlayer(ServerPlayerEntity player) {
+    protected void addPlayer(ServerPlayer player) {
         if (!this.participants.containsKey(PlayerRef.of(player)) || this.gameSpace.getPlayers().spectators().contains(player)) {
             this.spawnSpectator(player);
         }
     }
 
-    protected void removePlayer(ServerPlayerEntity player) {
+    protected void removePlayer(ServerPlayer player) {
         this.participants.remove(PlayerRef.of(player));
     }
 
-    protected EventResult canPlayerModify(ServerPlayerEntity player, BlockPos pos) {
+    protected EventResult canPlayerModify(ServerPlayer player, BlockPos pos) {
         var bdPlayer = participants.get(PlayerRef.of(player));
 
         if (bdPlayer != null && bdPlayer.currentRole != null && bdPlayer.currentRole.canModifyAt(pos)) {
@@ -288,7 +288,7 @@ public class BDGameActivity<C extends BDGameConfig> {
         return EventResult.DENY;
     }
 
-    private boolean consumeChatMessage(ServerPlayerEntity player, SignedMessage signedMessage, MessageType.Parameters parameters) {
+    private boolean consumeChatMessage(ServerPlayer player, PlayerChatMessage signedMessage, ChatType.Bound parameters) {
         var bdPlayer = participants.get(PlayerRef.of(player));
 
         if (bdPlayer != null && bdPlayer.currentRole != null) {
@@ -302,30 +302,30 @@ public class BDGameActivity<C extends BDGameConfig> {
         return this.respawn.playerSafeArea();
     }
 
-    protected EventResult onPlayerDamage(ServerPlayerEntity player, DamageSource source, float amount) {
-        if (source.isIn(DamageTypeTags.IS_PLAYER_ATTACK) ||
-                source.isOf(DamageTypes.OUT_OF_WORLD) ||
-                source.isOf(DamageTypes.IN_WALL)) {
+    protected EventResult onPlayerDamage(ServerPlayer player, DamageSource source, float amount) {
+        if (source.is(DamageTypeTags.IS_PLAYER_ATTACK) ||
+                source.is(DamageTypes.FELL_OUT_OF_WORLD) ||
+                source.is(DamageTypes.IN_WALL)) {
             this.spawnParticipant(player);
         }
 
         return EventResult.DENY;
     }
 
-    protected EventResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
+    protected EventResult onPlayerDeath(ServerPlayer player, DamageSource source) {
         this.spawnParticipant(player);
         return EventResult.DENY;
     }
 
-    protected void spawnParticipant(ServerPlayerEntity player) {
+    protected void spawnParticipant(ServerPlayer player) {
         var ref = PlayerRef.of(player);
         var spawn = this.getSpawnAreaFor(ref);
         this.playerLogic.resetPlayer(player, participants.get(ref));
         this.playerLogic.spawnPlayer(player, spawn, spawn.center());
     }
 
-    protected void spawnSpectator(ServerPlayerEntity player) {
-        this.playerLogic.resetPlayer(player, GameMode.SPECTATOR);
+    protected void spawnSpectator(ServerPlayer player) {
+        this.playerLogic.resetPlayer(player, GameType.SPECTATOR);
         this.playerLogic.spawnPlayer(player, this.respawn.playerSafeArea(), this.respawn.buildSafeArea().center());
     }
 
@@ -378,12 +378,12 @@ public class BDGameActivity<C extends BDGameConfig> {
 
             if (sPlayer != null) {
                 for (var item : items) {
-                    sPlayer.getInventory().remove(s -> s.getItem() == item, -1, sPlayer.playerScreenHandler.getCraftingInput());
+                    sPlayer.getInventory().clearOrCountMatchingItems(s -> s.getItem() == item, -1, sPlayer.inventoryMenu.getCraftSlots());
                 }
 
-                sPlayer.currentScreenHandler.sendContentUpdates();
-                sPlayer.playerScreenHandler.onContentChanged(sPlayer.getInventory());
-                sPlayer.getInventory().markDirty();
+                sPlayer.containerMenu.broadcastChanges();
+                sPlayer.inventoryMenu.slotsChanged(sPlayer.getInventory());
+                sPlayer.getInventory().setChanged();
             }
         }
     }
@@ -406,8 +406,8 @@ public class BDGameActivity<C extends BDGameConfig> {
         }
 
         if (lowest != null) {
-            this.gameSpace.getPlayers().showTitle(Text.empty(),
-                    Text.literal(formattedTime(timeToPhaseChangeSec)).formatted(lowest.color()),
+            this.gameSpace.getPlayers().showTitle(Component.empty(),
+                    Component.literal(formattedTime(timeToPhaseChangeSec)).withStyle(lowest.color()),
                     0, 25, 2);
 
             this.animations.add(lowest.sound().play(this.world));
@@ -430,25 +430,25 @@ public class BDGameActivity<C extends BDGameConfig> {
         this.timesToAnnounce.clear();
     }
 
-    protected void setTimerBar(BossBar.Color color, BossBar.Style style) {
+    protected void setTimerBar(BossEvent.BossBarColor color, BossEvent.BossBarOverlay style) {
         if (this.timerBar != null) {
             this.widgets.removeWidget(this.timerBar);
         }
         this.timerBar = this.widgets.addBossBar(this.createTimeText(this.totalTime % SEC), color, style);
     }
 
-    protected Text createTimeText(int timeToPhaseChangeSec) {
-        return Text.translatable(TIME_REMAINING, formattedTime(timeToPhaseChangeSec));
+    protected Component createTimeText(int timeToPhaseChangeSec) {
+        return Component.translatable(TIME_REMAINING, formattedTime(timeToPhaseChangeSec));
     }
 
-    protected Text[] createScoresForScoreboard() {
+    protected Component[] createScoresForScoreboard() {
         var players = new ArrayList<>(this.participants.values());
         players.sort(Collections.reverseOrder(Comparator.comparingInt(p -> p.score)));
         return players.stream().map(p ->
-                Text.literal(Integer.toString(p.score)).formatted(Formatting.AQUA)
-                        .append(Text.literal(" - ").formatted(Formatting.GRAY))
+                Component.literal(Integer.toString(p.score)).withStyle(ChatFormatting.AQUA)
+                        .append(Component.literal(" - ").withStyle(ChatFormatting.GRAY))
                         .append(p.displayName())
-        ).toArray(Text[]::new);
+        ).toArray(Component[]::new);
     }
 
     protected void openWinArea(BDPlayer winner, BuildZone winnerZone) {
@@ -459,7 +459,7 @@ public class BDGameActivity<C extends BDGameConfig> {
             player.player.ifOnline(this.gameSpace, this::spawnParticipant);
         }
 
-        var winnerName = winner.displayName().copy().formatted(Formatting.AQUA, Formatting.BOLD);
+        var winnerName = winner.displayName().copy().withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD);
         this.gameSpace.getPlayers().showTitle(
                 winnerName, WON_THE_GAME, 10, 10 * SEC, 10
         );
@@ -478,5 +478,5 @@ public class BDGameActivity<C extends BDGameConfig> {
         this.animations.add(SFX.FANFARE.play(this.world));
     }
 
-    public record AnnouncedTime(int secRemaining, Formatting color, SFX sound) {}
+    public record AnnouncedTime(int secRemaining, ChatFormatting color, SFX sound) {}
 }

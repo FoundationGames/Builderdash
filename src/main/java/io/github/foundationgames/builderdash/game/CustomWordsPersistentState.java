@@ -6,19 +6,18 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.foundationgames.builderdash.BDUtil;
 import io.github.foundationgames.builderdash.Builderdash;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
-import net.minecraft.world.PersistentState;
-import net.minecraft.world.PersistentStateType;
-
+import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class CustomWordsPersistentState extends PersistentState {
+public class CustomWordsPersistentState extends SavedData {
     public static final String SPLIT_STRING_LIST = "[,\\n] ?+";
 
     public static final Codec<String[]> WORD_CODEC = Codec.STRING.xmap(
@@ -30,7 +29,7 @@ public class CustomWordsPersistentState extends PersistentState {
             Codec.BOOL.fieldOf("replace_default").forGetter(s -> s.replaceDefault)
     ).apply(inst, CustomWordsPersistentState::new));
 
-    public static final Map<String, PersistentStateType<CustomWordsPersistentState>> TYPES = new HashMap<>();
+    public static final Map<String, SavedDataType<CustomWordsPersistentState>> TYPES = new HashMap<>();
 
     public final List<String[]> customWords = new ArrayList<>();
     public boolean replaceDefault;
@@ -43,12 +42,12 @@ public class CustomWordsPersistentState extends PersistentState {
         this.replaceDefault = replace;
     }
 
-    public static CustomWordsPersistentState get(MinecraftServer server, PersistentStateType<CustomWordsPersistentState> type) {
-        return server.getOverworld().getPersistentStateManager().getOrCreate(type);
+    public static CustomWordsPersistentState get(MinecraftServer server, SavedDataType<CustomWordsPersistentState> type) {
+        return server.overworld().getDataStorage().computeIfAbsent(type);
     }
 
-    public static PersistentStateType<CustomWordsPersistentState> getTypeForGame(String game) {
-        return TYPES.computeIfAbsent(game, k -> new PersistentStateType<>(
+    public static SavedDataType<CustomWordsPersistentState> getTypeForGame(String game) {
+        return TYPES.computeIfAbsent(game, k -> new SavedDataType<>(
                 String.format(Builderdash.ID + "_%s_custom_words", k),
                 CustomWordsPersistentState::new,
                 CODEC,
@@ -73,7 +72,7 @@ public class CustomWordsPersistentState extends PersistentState {
             this.customWords.add(word.split("="));
         }
 
-        this.markDirty();
+        this.setDirty();
 
         return words.length;
     }
@@ -82,13 +81,13 @@ public class CustomWordsPersistentState extends PersistentState {
         this.replaceDefault = false;
         this.customWords.clear();
 
-        this.markDirty();
+        this.setDirty();
     }
 
     public void addDefaultWords() {
         this.replaceDefault = true;
 
-        this.markDirty();
+        this.setDirty();
     }
 
     public static final String WORD_LIST_ADD = "command.builderdash.word_list_add";
@@ -98,62 +97,62 @@ public class CustomWordsPersistentState extends PersistentState {
     public static final String WORD_LIST_RESET = "command.builderdash.word_list_reset";
     public static final String WORD_LIST_ADD_DEFAULT = "command.builderdash.word_list_add_default";
 
-    public static LiteralArgumentBuilder<ServerCommandSource> createCommand(LiteralArgumentBuilder<ServerCommandSource> command, String game) {
-        var gameName = Text.translatable("name." + Builderdash.ID + "." + game);
+    public static LiteralArgumentBuilder<CommandSourceStack> createCommand(LiteralArgumentBuilder<CommandSourceStack> command, String game) {
+        var gameName = Component.translatable("name." + Builderdash.ID + "." + game);
         var type = getTypeForGame(game);
         var perm = BDUtil.permission(game, BDUtil.PERM_GAME_EDIT, 2);
 
         return command
-                .then(CommandManager.literal("setwords").requires(perm)
-                        .then(CommandManager.argument("word_list", StringArgumentType.greedyString())
+                .then(Commands.literal("setwords").requires(perm)
+                        .then(Commands.argument("word_list", StringArgumentType.greedyString())
                                 .executes(cmd -> {
                                     var wordList = cmd.getArgument("word_list", String.class);
                                     var customWords = get(cmd.getSource().getServer(), type);
 
                                     int ct = customWords.setWords(wordList);
-                                    cmd.getSource().sendFeedback(() -> Text.translatable(WORD_LIST_SET, gameName, ct), true);
+                                    cmd.getSource().sendSuccess(() -> Component.translatable(WORD_LIST_SET, gameName, ct), true);
                                     return 0;
                                 })
                         )
                 )
-                .then(CommandManager.literal("addwords").requires(perm)
-                        .then(CommandManager.argument("word_list", StringArgumentType.greedyString())
+                .then(Commands.literal("addwords").requires(perm)
+                        .then(Commands.argument("word_list", StringArgumentType.greedyString())
                                 .executes(cmd -> {
                                     var wordList = cmd.getArgument("word_list", String.class);
                                     var customWords = get(cmd.getSource().getServer(), type);
 
                                     int ct = customWords.addWords(wordList);
-                                    cmd.getSource().sendFeedback(() -> Text.translatable(WORD_LIST_ADD, ct, gameName), true);
+                                    cmd.getSource().sendSuccess(() -> Component.translatable(WORD_LIST_ADD, ct, gameName), true);
                                     return 0;
                                 })
                         )
                 )
-                .then(CommandManager.literal("resetwords").requires(perm)
+                .then(Commands.literal("resetwords").requires(perm)
                         .executes(cmd -> {
                             var customWords = get(cmd.getSource().getServer(), type);
 
                             customWords.resetWords();
-                            cmd.getSource().sendFeedback(() -> Text.translatable(WORD_LIST_RESET, gameName), true);
+                            cmd.getSource().sendSuccess(() -> Component.translatable(WORD_LIST_RESET, gameName), true);
                             return 0;
                         })
                 )
-                .then(CommandManager.literal("getwordcount").requires(perm)
+                .then(Commands.literal("getwordcount").requires(perm)
                         .executes(cmd -> {
                             var customWords = get(cmd.getSource().getServer(), type);
                             int ct = customWords.customWords.size();
 
-                            cmd.getSource().sendFeedback(() ->
-                                            Text.translatable(customWords.replaceDefault ? WORD_LIST_GET_NO_DEFAULT : WORD_LIST_GET, ct, gameName),
+                            cmd.getSource().sendSuccess(() ->
+                                            Component.translatable(customWords.replaceDefault ? WORD_LIST_GET_NO_DEFAULT : WORD_LIST_GET, ct, gameName),
                                     true);
                             return 0;
                         })
                 )
-                .then(CommandManager.literal("withdefault").requires(perm)
+                .then(Commands.literal("withdefault").requires(perm)
                         .executes(cmd -> {
                             var customWords = get(cmd.getSource().getServer(), type);
 
                             customWords.addDefaultWords();
-                            cmd.getSource().sendFeedback(() -> Text.translatable(WORD_LIST_ADD_DEFAULT, gameName), true);
+                            cmd.getSource().sendSuccess(() -> Component.translatable(WORD_LIST_ADD_DEFAULT, gameName), true);
                             return 0;
                         })
                 );

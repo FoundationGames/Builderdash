@@ -3,17 +3,16 @@ package io.github.foundationgames.builderdash.game;
 import com.google.common.collect.ImmutableList;
 import io.github.foundationgames.builderdash.Builderdash;
 import io.github.foundationgames.builderdash.config.ServerConfigAccess;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.InvalidIdentifierException;
-
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import net.minecraft.ResourceLocationException;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 
 public record BDGameMusic(List<Entry> musicEntries) {
     public static BDGameMusic ofStrings(List<String> strings) {
@@ -24,19 +23,19 @@ public record BDGameMusic(List<Entry> musicEntries) {
 
             try {
                 int duration = 120;
-                Identifier id = null;
+                ResourceLocation id = null;
 
                 if (durAndId.length >= 2) {
                     duration = Integer.parseInt(durAndId[0]);
-                    id = Identifier.tryParse(durAndId[1]);
+                    id = ResourceLocation.tryParse(durAndId[1]);
                 } else if (durAndId.length == 1) {
-                    id = Identifier.tryParse(durAndId[0]);
+                    id = ResourceLocation.tryParse(durAndId[0]);
                 }
 
                 if (id != null) {
                     entries.add(new Entry(id, duration));
                 }
-            } catch (InvalidIdentifierException | NumberFormatException ex) {
+            } catch (ResourceLocationException | NumberFormatException ex) {
                 Builderdash.LOG.error("Error parsing game music", ex);
             }
         }
@@ -44,15 +43,15 @@ public record BDGameMusic(List<Entry> musicEntries) {
         return new BDGameMusic(entries.build());
     }
 
-    public record Entry(Identifier soundId, int durationSec) {
-        public void play(ServerPlayerEntity player) {
-            var server = player.getEntityWorld().getServer();
-            var playerConfig = ServerConfigAccess.forServer(server).getPlayerConfig(player.getUuid());
+    public record Entry(ResourceLocation soundId, int durationSec) {
+        public void play(ServerPlayer player) {
+            var server = player.level().getServer();
+            var playerConfig = ServerConfigAccess.forServer(server).getPlayerConfig(player.getUUID());
 
             float volume = (float) playerConfig.musicVolume.get() / 100;
 
             if (volume > 0.005) {
-                player.playSoundToPlayer(SoundEvent.of(soundId()), SoundCategory.MASTER, volume, 1);
+                player.playNotifySound(SoundEvent.createVariableRangeEvent(soundId()), SoundSource.MASTER, volume, 1);
             }
         }
     }

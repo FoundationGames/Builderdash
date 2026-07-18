@@ -1,19 +1,19 @@
 package io.github.foundationgames.builderdash.game.element.display;
 
 import com.mojang.authlib.GameProfile;
+import com.mojang.math.Axis;
 import eu.pb4.polymer.virtualentity.api.elements.ItemDisplayElement;
 import eu.pb4.polymer.virtualentity.api.elements.TextDisplayElement;
 import eu.pb4.polymer.virtualentity.api.elements.VirtualElement;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.ProfileComponent;
-import net.minecraft.item.Items;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.RotationAxis;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ResolvableProfile;
 
 public class GenericContent extends InWorldDisplay.Content {
     // WPB = line-width per block at scale = 1
@@ -91,13 +91,13 @@ public class GenericContent extends InWorldDisplay.Content {
         float x = (float) ((display.sizeX - headsTotalWidth) * 0.5);
         for (var profile : this.playerHeads) {
             var head = new ItemDisplayElement();
-            var stack = Items.PLAYER_HEAD.getDefaultStack();
-            stack.set(DataComponentTypes.PROFILE, ProfileComponent.ofStatic(profile));
+            var stack = Items.PLAYER_HEAD.getDefaultInstance();
+            stack.set(DataComponents.PROFILE, ResolvableProfile.createResolved(profile));
 
             head.setItem(stack);
             head.setScale(new Vector3f(4f));
             head.setTranslation(new Vector3f(x + 2f, this.margin + 2f, -0.5f));
-            head.setLeftRotation(RotationAxis.POSITIVE_Y.rotation(MathHelper.PI));
+            head.setLeftRotation(Axis.YP.rotation(Mth.PI));
 
             display.addElement(head);
             this.elems.add(head);
@@ -112,7 +112,7 @@ public class GenericContent extends InWorldDisplay.Content {
         }
     }
 
-    public record TextLine(Text text, int expectedLineCount, float scale) {
+    public record TextLine(Component text, int expectedLineCount, float scale) {
     }
 
     public static class Builder {
@@ -129,29 +129,29 @@ public class GenericContent extends InWorldDisplay.Content {
             return new GenericContent(List.copyOf(fromTop), List.copyOf(fromBottom), List.copyOf(playerHeads), margin);
         }
 
-        public Builder addTop(Text line, int linesLong, float scale) {
+        public Builder addTop(Component line, int linesLong, float scale) {
             this.fromTop.add(new TextLine(line, linesLong, scale));
             return this;
         }
 
-        public Builder addTop(Text line, int linesLong) {
+        public Builder addTop(Component line, int linesLong) {
             return this.addTop(line, linesLong, 3);
         }
 
-        public Builder addTop(Text line) {
+        public Builder addTop(Component line) {
             return this.addTop(line, 2, 3);
         }
 
-        public Builder addBottom(Text line, int linesLong, float scale) {
+        public Builder addBottom(Component line, int linesLong, float scale) {
             this.fromBottom.add(new TextLine(line, linesLong, scale));
             return this;
         }
 
-        public Builder addBottom(Text line, int linesLong) {
+        public Builder addBottom(Component line, int linesLong) {
             return this.addBottom(line, linesLong, 3);
         }
 
-        public Builder addBottom(Text line) {
+        public Builder addBottom(Component line) {
             return this.addBottom(line, 2, 3);
         }
 

@@ -8,9 +8,9 @@ import io.github.foundationgames.builderdash.game.BDGameConfig;
 import io.github.foundationgames.builderdash.game.element.title.StyledTitle;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMapConfig;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.common.config.WaitingLobbyConfig;
@@ -20,11 +20,11 @@ public record BDTelephoneConfig(
 ) implements BDGameConfig {
     public static final String TELEPHONE = "telephone";
 
-    public static final Identifier DEFAULT_CONFIG = Builderdash.id("telephone");
-    public static final Identifier FAST_CONFIG = Builderdash.id("telephone_fast");
-    public static final Identifier DOUBLE_CONFIG = Builderdash.id("telephone_double_rounds");
-    public static final Identifier DOUBLE_FAST_CONFIG = Builderdash.id("telephone_fast_double_rounds");
-    public static final Identifier TEST_CONFIG = Builderdash.id("telephone_test");
+    public static final ResourceLocation DEFAULT_CONFIG = Builderdash.id("telephone");
+    public static final ResourceLocation FAST_CONFIG = Builderdash.id("telephone_fast");
+    public static final ResourceLocation DOUBLE_CONFIG = Builderdash.id("telephone_double_rounds");
+    public static final ResourceLocation DOUBLE_FAST_CONFIG = Builderdash.id("telephone_fast_double_rounds");
+    public static final ResourceLocation TEST_CONFIG = Builderdash.id("telephone_test");
 
     public static final MapCodec<BDTelephoneConfig> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             WaitingLobbyConfig.CODEC.fieldOf("players").forGetter(BDTelephoneConfig::players),
@@ -50,12 +50,12 @@ public record BDTelephoneConfig(
     }
 
     @Override
-    public StyledTitle makeTitle(Vec3d pos, float scale, Quaternionf rot) {
+    public StyledTitle makeTitle(Vec3 pos, float scale, Quaternionf rot) {
         return StyledTitle.forMinigame(pos, scale, rot, TELEPHONE, 0x8a24ff);
     }
 
     @Override
-    public void openActivity(GameSpace game, ServerWorld world, BuilderdashMap map) {
+    public void openActivity(GameSpace game, ServerLevel world, BuilderdashMap map) {
         BDTelephoneActivity.open(game, world, map, this);
     }
 }

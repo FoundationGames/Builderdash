@@ -21,12 +21,6 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import net.minecraft.entity.boss.BossBar;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.math.BlockPos;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.plasmid.api.game.GameActivity;
 import xyz.nucleoid.plasmid.api.game.GameCloseReason;
@@ -42,6 +36,12 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.BossEvent;
 
 public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
     public static final String ROUND_NO = "label.builderdash.versus.round";
@@ -51,18 +51,18 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
     public static final String RESULT_WON = "message.builderdash.versus.result_player_won";
     public static final String PLAYER_GAINED_POINTS = "message.builderdash.versus.player_gained_points";
 
-    public static final Text FIRST_PROMPT = Text.translatable("label.builderdash.versus.first_prompt").formatted(Formatting.AQUA);
-    public static final Text SECOND_PROMPT = Text.translatable("label.builderdash.versus.second_prompt").formatted(Formatting.AQUA);
-    public static final Text PRE_VOTE = Text.translatable("label.builderdash.versus.pre_vote").formatted(Formatting.AQUA);
-    public static final Text VOTING_PLAYERS = Text.translatable("label.builderdash.versus.voting").formatted(Formatting.AQUA);
-    public static final Text POST_VOTE = Text.translatable("label.builderdash.versus.post_vote").formatted(Formatting.AQUA);
-    public static final Text REVEALING = Text.translatable("label.builderdash.versus.revealing").formatted(Formatting.RED);
-    public static final Text RESULTS = Text.translatable("label.builderdash.versus.results").formatted(Formatting.BLUE);
-    public static final Text HOW_TO_VOTE = Text.translatable("label.builderdash.versus.how_to_vote").formatted(Formatting.GRAY);
-    public static final Text GET_READY_VOTE = Text.translatable("message.builderdash.versus.pre_vote").formatted(Formatting.GOLD);
-    public static final Text START_VOTING = Text.translatable("message.builderdash.versus.start_voting").formatted(Formatting.GREEN);
-    public static final Text RESULTS_IN = Text.translatable("message.builderdash.versus.results_are_in").formatted(Formatting.LIGHT_PURPLE);
-    public static final Text RESULT_TIED = Text.translatable("message.builderdash.versus.result_tied").formatted(Formatting.YELLOW);
+    public static final Component FIRST_PROMPT = Component.translatable("label.builderdash.versus.first_prompt").withStyle(ChatFormatting.AQUA);
+    public static final Component SECOND_PROMPT = Component.translatable("label.builderdash.versus.second_prompt").withStyle(ChatFormatting.AQUA);
+    public static final Component PRE_VOTE = Component.translatable("label.builderdash.versus.pre_vote").withStyle(ChatFormatting.AQUA);
+    public static final Component VOTING_PLAYERS = Component.translatable("label.builderdash.versus.voting").withStyle(ChatFormatting.AQUA);
+    public static final Component POST_VOTE = Component.translatable("label.builderdash.versus.post_vote").withStyle(ChatFormatting.AQUA);
+    public static final Component REVEALING = Component.translatable("label.builderdash.versus.revealing").withStyle(ChatFormatting.RED);
+    public static final Component RESULTS = Component.translatable("label.builderdash.versus.results").withStyle(ChatFormatting.BLUE);
+    public static final Component HOW_TO_VOTE = Component.translatable("label.builderdash.versus.how_to_vote").withStyle(ChatFormatting.GRAY);
+    public static final Component GET_READY_VOTE = Component.translatable("message.builderdash.versus.pre_vote").withStyle(ChatFormatting.GOLD);
+    public static final Component START_VOTING = Component.translatable("message.builderdash.versus.start_voting").withStyle(ChatFormatting.GREEN);
+    public static final Component RESULTS_IN = Component.translatable("message.builderdash.versus.results_are_in").withStyle(ChatFormatting.LIGHT_PURPLE);
+    public static final Component RESULT_TIED = Component.translatable("message.builderdash.versus.result_tied").withStyle(ChatFormatting.YELLOW);
 
     private Phase phase = Phase.PREGAME;
 
@@ -85,7 +85,7 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
 
     private final Object2IntMap<PlayerRef> votes = new Object2IntOpenHashMap<>();
 
-    protected BDVersusActivity(GameSpace space, GameActivity game, ServerWorld world, BuilderdashMap map, BDVersusConfig config) {
+    protected BDVersusActivity(GameSpace space, GameActivity game, ServerLevel world, BuilderdashMap map, BDVersusConfig config) {
         super(space, game, world, map, config);
 
         this.privateBuildZones = new PrivateBuildZoneManager(world, map.privateZoneTemplate, map.buildZonesStart, this.participants.size());
@@ -125,7 +125,7 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
         }
     }
 
-    public static void open(GameSpace gameSpace, ServerWorld world, BuilderdashMap map, BDVersusConfig config) {
+    public static void open(GameSpace gameSpace, ServerLevel world, BuilderdashMap map, BDVersusConfig config) {
         gameSpace.setActivity(game -> new BDVersusActivity(gameSpace, game, world, map, config));
     }
 
@@ -151,7 +151,7 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
             var builds = this.buildRounds.get(this.currentRound);
             for (BuildPairWithPrompt build : builds) {
                 build.builders[this.currentSubRound].ifOnline(this.gameSpace, s ->
-                        s.sendMessageToClient(Text.translatable(YOU_ARE_BUILDING, build.prompt).formatted(Formatting.AQUA), true));
+                        s.sendSystemMessage(Component.translatable(YOU_ARE_BUILDING, build.prompt).withStyle(ChatFormatting.AQUA), true));
             }
         }
 
@@ -193,7 +193,7 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
         this.totalTime = this.timeToPhaseChange;
         this.playersReadyToContinue.clear();
 
-        this.setTimerBar(BossBar.Color.BLUE, BossBar.Style.NOTCHED_20);
+        this.setTimerBar(BossEvent.BossBarColor.BLUE, BossEvent.BossBarOverlay.NOTCHED_20);
         this.timesToAnnounce.add(TIME_ONE_MIN);
         this.timesToAnnounce.add(TIME_THIRTY_SEC);
         this.timesToAnnounce.add(TIME_TEN_SEC);
@@ -212,8 +212,8 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
             pair.builders[subRound].ifOnline(this.gameSpace, this::spawnParticipant);
         }
 
-        var roundText = subRound == 0 ? Text.translatable(ROUND_NO, this.currentRound / 2 + 1, this.maxRounds / 2).formatted(Formatting.GOLD) : Text.empty();
-        var promptText = Text.translatable(PROMPT_NO, subRound + 1, 2).formatted(Formatting.LIGHT_PURPLE);
+        var roundText = subRound == 0 ? Component.translatable(ROUND_NO, this.currentRound / 2 + 1, this.maxRounds / 2).withStyle(ChatFormatting.GOLD) : Component.empty();
+        var promptText = Component.translatable(PROMPT_NO, subRound + 1, 2).withStyle(ChatFormatting.LIGHT_PURPLE);
 
         this.gameSpace.getPlayers().showTitle(
                 roundText, promptText, 10, 5 * SEC, 10
@@ -293,7 +293,7 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
         anims.addLast(TickingAnimation.instant(w -> this.nextPhase()));
         this.animations.add(new TickingAnimation.Sequence(anims));
 
-        this.gameSpace.getPlayers().showTitle(GET_READY_VOTE, Text.empty(), 5, 3 * SEC, 5);
+        this.gameSpace.getPlayers().showTitle(GET_READY_VOTE, Component.empty(), 5, 3 * SEC, 5);
         this.animations.add(SFX.VERSUS_VOTE.play(this.world, 8));
         this.updateScoreboard();
     }
@@ -303,7 +303,7 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
         this.timeToPhaseChange = this.config.voteTime() * SEC;
         this.totalTime = this.timeToPhaseChange;
 
-        this.setTimerBar(BossBar.Color.GREEN, BossBar.Style.NOTCHED_10);
+        this.setTimerBar(BossEvent.BossBarColor.GREEN, BossEvent.BossBarOverlay.NOTCHED_10);
         this.timesToAnnounce.addAll(COUNTDOWN_FROM_FIVE);
 
         for (var bdPlayer : this.participants.values()) {
@@ -313,7 +313,7 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
         var builds = this.buildRounds.get(this.currentRound)[this.currentVotePair];
         var displays = this.gameMap.doubleZone.displays();
         var prompt = builds.prompt;
-        var promptText = Text.translatable(QUOTE, prompt).formatted(Formatting.AQUA);
+        var promptText = Component.translatable(QUOTE, prompt).withStyle(ChatFormatting.AQUA);
 
         for (int i = 0; i < displays.length; i++) {
             var disp = displays[i];
@@ -323,7 +323,7 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
             }
 
             displays[i].setContent(GenericContent.builder()
-                    .addTop(Text.translatable(BUILD_NO, i + 1).formatted(Formatting.GREEN), 1, 9)
+                    .addTop(Component.translatable(BUILD_NO, i + 1).withStyle(ChatFormatting.GREEN), 1, 9)
                     .addBottom(HOW_TO_VOTE)
                     .addBottom(promptText, 1, scale)
                     .build());
@@ -359,10 +359,10 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
             var disp = displays[i];
             var builder = builds.builders[i];
             var player = builder.getEntity(this.gameSpace);
-            Text builderName = Text.empty();
+            Component builderName = Component.empty();
 
             if (player != null) {
-                builderName = player.getStyledDisplayName().copy().formatted(Formatting.YELLOW);
+                builderName = player.getFeedbackDisplayName().copy().withStyle(ChatFormatting.YELLOW);
             }
 
             float scale = (float) (((disp.sizeX - 0.75) * GenericContent.WIDTH_PER_BLOCK) / ((prompt.length() * 6.2) + 5));
@@ -372,7 +372,7 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
 
             var content = GenericContent.builder()
                     .addTop(builderName, 1, 4.7f)
-                    .addTop(Text.translatable(QUOTE, prompt).formatted(Formatting.AQUA), 1, scale)
+                    .addTop(Component.translatable(QUOTE, prompt).withStyle(ChatFormatting.AQUA), 1, scale)
                     .addBottom(RESULTS, 1, 6);
 
             disp.setContent(content.build());
@@ -404,7 +404,7 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
         anims.addLast(TickingAnimation.instant(w -> tallyVotesAndUpdateScores()));
         this.animations.add(new TickingAnimation.Sequence(anims));
 
-        this.gameSpace.getPlayers().showTitle(Text.empty(), RESULTS_IN, 5, 2 * SEC, 5);
+        this.gameSpace.getPlayers().showTitle(Component.empty(), RESULTS_IN, 5, 2 * SEC, 5);
         this.updateScoreboard();
     }
 
@@ -439,8 +439,8 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
             }
 
             builder.ifOnline(this.gameSpace, s ->
-                    this.gameSpace.getPlayers().sendMessage(Text.translatable(PLAYER_GAINED_POINTS, s.getStyledDisplayName(), points)
-                            .formatted(Formatting.GREEN, Formatting.ITALIC)));
+                    this.gameSpace.getPlayers().sendMessage(Component.translatable(PLAYER_GAINED_POINTS, s.getFeedbackDisplayName(), points)
+                            .withStyle(ChatFormatting.GREEN, ChatFormatting.ITALIC)));
         }
 
         int winnerIdx = totalVotes.int2IntEntrySet().stream().max(Comparator.comparingInt(Int2IntMap.Entry::getIntValue))
@@ -449,11 +449,11 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
                 .map(Int2IntMap.Entry::getIntKey).orElse(-1);
         if (winnerIdx >= 0 && loserIdx >= 0) {
             if (totalVotes.get(winnerIdx) == totalVotes.get(loserIdx)) {
-                this.gameSpace.getPlayers().showTitle(Text.empty(), RESULT_TIED, 5, 3 * SEC, 5);
+                this.gameSpace.getPlayers().showTitle(Component.empty(), RESULT_TIED, 5, 3 * SEC, 5);
             } else {
                 pair.builders[winnerIdx].ifOnline(this.gameSpace, s ->
-                        this.gameSpace.getPlayers().showTitle(Text.empty(),
-                                Text.translatable(RESULT_WON, s.getStyledDisplayName()).formatted(Formatting.AQUA),
+                        this.gameSpace.getPlayers().showTitle(Component.empty(),
+                                Component.translatable(RESULT_WON, s.getFeedbackDisplayName()).withStyle(ChatFormatting.AQUA),
                                 5, 3 * SEC, 5));
             }
         }
@@ -497,7 +497,7 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
     }
 
     @Override
-    protected void addPlayer(ServerPlayerEntity player) {
+    protected void addPlayer(ServerPlayer player) {
         var ref = PlayerRef.of(player);
         var data = this.disconnectedPlayers.get(ref);
 
@@ -512,7 +512,7 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
     }
 
     @Override
-    protected void removePlayer(ServerPlayerEntity player) {
+    protected void removePlayer(ServerPlayer player) {
         var ref = PlayerRef.of(player);
         var data = this.participants.get(ref);
         disconnectedPlayers.put(ref, data);
@@ -522,8 +522,8 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
     public void updateScoreboard() {
         this.scoreboard.clearLines();
 
-        this.scoreboard.addLines(Text.translatable(ROUND_NO, this.currentRound / 2 + 1, this.maxRounds / 2).formatted(Formatting.BLUE));
-        this.scoreboard.addLines(Text.empty());
+        this.scoreboard.addLines(Component.translatable(ROUND_NO, this.currentRound / 2 + 1, this.maxRounds / 2).withStyle(ChatFormatting.BLUE));
+        this.scoreboard.addLines(Component.empty());
 
         switch (this.phase) {
             case PREPARE_VOTE -> this.scoreboard.addLines(PRE_VOTE);
@@ -532,15 +532,15 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
             case BUILDING -> this.scoreboard.addLines(this.currentSubRound == 0 ? FIRST_PROMPT : SECOND_PROMPT);
         }
         if (this.phase == Phase.VOTING || this.phase == Phase.BUILDING) {
-            this.scoreboard.addLines(Text.translatable(HOW_MANY_DONE, this.playersReadyToContinue.size(), this.participants.size()).formatted(Formatting.AQUA));
+            this.scoreboard.addLines(Component.translatable(HOW_MANY_DONE, this.playersReadyToContinue.size(), this.participants.size()).withStyle(ChatFormatting.AQUA));
         }
-        this.scoreboard.addLines(Text.empty());
+        this.scoreboard.addLines(Component.empty());
 
         if (this.phase == Phase.BUILDING) {
             this.scoreboard.addLines(TYPE_DONE_1, TYPE_DONE_2);
         }
 
-        this.scoreboard.addLines(Text.empty());
+        this.scoreboard.addLines(Component.empty());
         this.scoreboard.addLines(this.createScoresForScoreboard());
     }
 
@@ -562,12 +562,12 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
         return data;
     }
 
-    public int getVote(ServerPlayerEntity player) {
+    public int getVote(ServerPlayer player) {
         var ref = PlayerRef.of(player);
         return !votes.containsKey(ref) ? -1 : votes.getInt(ref);
     }
 
-    public void setVote(ServerPlayerEntity player, int buildIndex) {
+    public void setVote(ServerPlayer player, int buildIndex) {
         var ref = PlayerRef.of(player);
         votes.put(ref, buildIndex);
         playersReadyToContinue.add(ref);

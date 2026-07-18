@@ -1,13 +1,12 @@
 package io.github.foundationgames.builderdash.game.map;
 
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 
 public class PrivateBuildZoneManager {
-    public final ServerWorld world;
+    public final ServerLevel world;
     public final BuildZone template;
     public final BlockPos start;
     public final int maxRowSize;
@@ -15,7 +14,7 @@ public class PrivateBuildZoneManager {
     public List<BuildZone> cachedBuildZones = new ArrayList<>();
     public List<BuildZone> buildZones = new ArrayList<>();
 
-    public PrivateBuildZoneManager(ServerWorld world, BuildZone template, BlockPos start, int maxRowSize) {
+    public PrivateBuildZoneManager(ServerLevel world, BuildZone template, BlockPos start, int maxRowSize) {
         this.world = world;
         this.template = template;
         this.start = start;
