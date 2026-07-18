@@ -5,7 +5,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.foundationgames.builderdash.Builderdash;
 import io.github.foundationgames.builderdash.game.BDCustomWordsConfig;
-import io.github.foundationgames.builderdash.game.CustomWordsPersistentState;
+import io.github.foundationgames.builderdash.game.CustomWordsSavedData;
 import io.github.foundationgames.builderdash.game.element.title.StyledTitle;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMapConfig;
@@ -14,7 +14,7 @@ import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.common.config.WaitingLobbyConfig;
 
 import java.util.ArrayList;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.Vec3;
 
@@ -24,9 +24,9 @@ public record BDPictionaryConfig(
 ) implements BDCustomWordsConfig<BDPictionaryConfig> {
     public static final String PICTIONARY = "pictionary";
 
-    public static final ResourceLocation DEFAULT_CONFIG = Builderdash.id("pictionary");
-    public static final ResourceLocation DOUBLE_CONFIG = Builderdash.id("pictionary_double_rounds");
-    public static final ResourceLocation TEST_CONFIG = Builderdash.id("pictionary_test");
+    public static final Identifier DEFAULT_CONFIG = Builderdash.id("pictionary");
+    public static final Identifier DOUBLE_CONFIG = Builderdash.id("pictionary_double_rounds");
+    public static final Identifier TEST_CONFIG = Builderdash.id("pictionary_test");
 
     public static final MapCodec<BDPictionaryConfig> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             WaitingLobbyConfig.CODEC.fieldOf("players").forGetter(BDPictionaryConfig::players),
@@ -42,7 +42,7 @@ public record BDPictionaryConfig(
     ).apply(instance, BDPictionaryConfig::new));
 
     @Override
-    public BDPictionaryConfig withCustomWords(CustomWordsPersistentState state) {
+    public BDPictionaryConfig withCustomWords(CustomWordsSavedData state) {
         var words = new ArrayList<>(this.wordList().words());
 
         if (state.customWords.size() > 0) {

@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Cursor3D;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.ProblemReporter;
@@ -26,7 +26,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public record BuildZone(BlockBounds templateArea, BlockBounds playerSafeArea, BlockBounds buildSafeArea, InWorldDisplay[] displays) {
-    public static BuildZone get(ResourceLocation mapId, MapTemplate template, String marker, String[] displays) {
+    public static BuildZone get(Identifier mapId, MapTemplate template, String marker, String[] displays) {
         var templateRegion = template.getMetadata().getFirstRegion(marker + "_template");
         var playerSafeRegion = BDUtil.regionOrThrow(mapId, template, marker + "_playersafe");
         var buildSafeRegion = BDUtil.regionOrThrow(mapId, template, marker + "_buildsafe");

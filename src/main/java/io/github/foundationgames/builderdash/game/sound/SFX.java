@@ -284,7 +284,7 @@ public record SFX(Deque<Step> steps) {
     record SoundStep(SoundEvent sound, float volume, float pitch) implements Step {
         @Override
         public int exec(Collection<PlayerRef> players, ServerLevel world) {
-            final long seed = world.random.nextLong();
+            final long seed = world.getRandom().nextLong();
             for (var player : players) {
                 player.ifOnline(world, s -> s.connection.send(
                         new ClientboundSoundEntityPacket(Holder.direct(sound), SoundSource.MASTER, s, volume(), pitch, seed)

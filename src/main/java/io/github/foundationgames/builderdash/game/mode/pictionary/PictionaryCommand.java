@@ -3,7 +3,7 @@ package io.github.foundationgames.builderdash.game.mode.pictionary;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.github.foundationgames.builderdash.BDUtil;
 import io.github.foundationgames.builderdash.Builderdash;
-import io.github.foundationgames.builderdash.game.CustomWordsPersistentState;
+import io.github.foundationgames.builderdash.game.CustomWordsSavedData;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -23,6 +23,6 @@ public enum PictionaryCommand {;
                 .then(Commands.literal("double")
                         .executes(ctx -> Builderdash.openBuilderdashGame(ctx.getSource(), BDPictionaryConfig.DOUBLE_CONFIG))
                 );
-        return CustomWordsPersistentState.createCommand(command, BDPictionaryConfig.PICTIONARY);
+        return CustomWordsSavedData.createCommand(command, BDPictionaryConfig.PICTIONARY);
     }
 }

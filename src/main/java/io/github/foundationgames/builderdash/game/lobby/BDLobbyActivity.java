@@ -21,7 +21,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.NoteBlock;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
-import xyz.nucleoid.fantasy.RuntimeWorldConfig;
+import xyz.nucleoid.fantasy.RuntimeLevelConfig;
 import xyz.nucleoid.plasmid.api.game.GameActivity;
 import xyz.nucleoid.plasmid.api.game.GameOpenContext;
 import xyz.nucleoid.plasmid.api.game.GameOpenProcedure;
@@ -95,10 +95,10 @@ public class BDLobbyActivity<C extends BDGameConfig> {
         BDGameConfig config = context.config();
         BuilderdashMap map = config.getMapConfig().buildMap(context.server());
 
-        RuntimeWorldConfig worldConfig = new RuntimeWorldConfig()
+        RuntimeLevelConfig worldConfig = new RuntimeLevelConfig()
                 .setGenerator(map.asGenerator(context.server()));
 
-        return context.openWithWorld(worldConfig, (game, world) -> {
+        return context.openWithLevel(worldConfig, (game, world) -> {
             var lobby = new BDLobbyActivity<>(game.getGameSpace(), game, world, map, context.config());
             lobby.timeUntilStart = config.getLobbyConfig().countdown().fullSeconds() * SEC;
 

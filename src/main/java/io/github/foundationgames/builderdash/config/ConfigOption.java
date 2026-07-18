@@ -7,7 +7,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import io.github.foundationgames.builderdash.Builderdash;
-import io.github.foundationgames.builderdash.game.CustomWordsPersistentState;
+import io.github.foundationgames.builderdash.game.CustomWordsSavedData;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -140,7 +140,7 @@ public abstract class ConfigOption<T> {
         }
 
         private static ArrayList<String> parse(String string) {
-            return new ArrayList<>(List.of(string.split(CustomWordsPersistentState.SPLIT_STRING_LIST)));
+            return new ArrayList<>(List.of(string.split(CustomWordsSavedData.SPLIT_STRING_LIST)));
         }
 
         private static String stringify(ArrayList<String> list) {

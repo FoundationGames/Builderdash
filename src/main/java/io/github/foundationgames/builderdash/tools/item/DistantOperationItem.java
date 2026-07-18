@@ -2,15 +2,16 @@ package io.github.foundationgames.builderdash.tools.item;
 
 import eu.pb4.polymer.core.api.item.PolymerItem;
 import io.github.foundationgames.builderdash.tools.BDToolsState;
+import net.fabricmc.fabric.api.networking.v1.context.PacketContext;
+import net.minecraft.core.HolderLookup;
 import org.jetbrains.annotations.Nullable;
-import xyz.nucleoid.packettweaker.PacketContext;
 
 import java.util.List;
 import java.util.function.BiConsumer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -24,14 +25,14 @@ import net.minecraft.world.level.Level;
 public class DistantOperationItem extends Item implements PolymerItem {
     public static final Component BRUSH = Component.translatable("tooltip.builderdash.tool.brush").withStyle(ChatFormatting.GRAY);
 
-    public static final ResourceLocation SNOWBALL_MODEL = ResourceLocation.parse("snowball");
-    public static final ResourceLocation SLIME_MODEL = ResourceLocation.parse("slime_ball");
-    public static final ResourceLocation MAGMA_MODEL = ResourceLocation.parse("magma_cream");
+    public static final Identifier SNOWBALL_MODEL = Identifier.parse("snowball");
+    public static final Identifier SLIME_MODEL = Identifier.parse("slime_ball");
+    public static final Identifier MAGMA_MODEL = Identifier.parse("magma_cream");
 
-    private final ResourceLocation model;
+    private final Identifier model;
     private final BiConsumer<BDToolsState, BlockPos> operation;
 
-    public DistantOperationItem(Properties settings, ResourceLocation model, BiConsumer<BDToolsState, BlockPos> operation) {
+    public DistantOperationItem(Properties settings, Identifier model, BiConsumer<BDToolsState, BlockPos> operation) {
         super(settings.rarity(Rarity.RARE)
                 .stacksTo(1));
         this.model = model;
@@ -56,7 +57,7 @@ public class DistantOperationItem extends Item implements PolymerItem {
     }
 
     @Override
-    public @Nullable ResourceLocation getPolymerItemModel(ItemStack stack, PacketContext context) {
+    public @Nullable Identifier getPolymerItemModel(ItemStack stack, PacketContext context, HolderLookup.Provider lookup) {
         return this.model;
     }
 

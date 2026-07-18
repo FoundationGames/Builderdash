@@ -17,7 +17,7 @@ public enum FilterItemStack {;
     public static final Component FILTER_USE_AIR = Component.translatable("tooltip.builderdash.tool.filter_use_air").withStyle(ChatFormatting.GRAY);
 
     public static ItemStack createWhitelist() {
-        var stack = Items.LIGHT_BLUE_BUNDLE.getDefaultInstance();
+        var stack = Items.DYED_BUNDLE.lightBlue().getDefaultInstance();
         stack.set(DataComponents.ITEM_NAME, Component.translatable("item.builderdash.tool_filter_whitelist").withStyle(ChatFormatting.GOLD));
         stack.set(DataComponents.LORE, new ItemLore(List.of(
                 FILTER_ACTIVE, FILTER_WL, FILTER_USE_AIR
@@ -33,7 +33,7 @@ public enum FilterItemStack {;
     }
 
     public static ItemStack createBlacklist() {
-        var stack = Items.ORANGE_BUNDLE.getDefaultInstance();
+        var stack = Items.DYED_BUNDLE.orange().getDefaultInstance();
         stack.set(DataComponents.ITEM_NAME, Component.translatable("item.builderdash.tool_filter_blacklist").withStyle(ChatFormatting.GOLD));
         stack.set(DataComponents.LORE, new ItemLore(List.of(
                 FILTER_ACTIVE, FILTER_BL, FILTER_USE_AIR

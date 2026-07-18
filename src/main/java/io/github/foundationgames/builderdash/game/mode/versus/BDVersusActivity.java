@@ -431,7 +431,7 @@ public class BDVersusActivity extends BDGameActivity<BDVersusConfig> {
             if (this.playerScoredBuilds.containsKey(builder)) {
                 var scoredBuild = this.playerScoredBuilds.get(builder);
                 if (points > scoredBuild.points() ||
-                        (points == scoredBuild.points() && this.world.random.nextBoolean())) {
+                        (points == scoredBuild.points() && this.world.getRandom().nextBoolean())) {
                     this.playerScoredBuilds.put(builder, new PlayerBuildInfo(pair.builds[idx], points));
                 }
             } else {

@@ -4,7 +4,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.github.foundationgames.builderdash.config.PlayerConfigInfo;
 import io.github.foundationgames.builderdash.config.ServerConfigInfo;
 import io.github.foundationgames.builderdash.game.BDCustomWordsConfig;
-import io.github.foundationgames.builderdash.game.CustomWordsPersistentState;
+import io.github.foundationgames.builderdash.game.CustomWordsSavedData;
 import io.github.foundationgames.builderdash.game.lobby.BDLobbyActivity;
 import io.github.foundationgames.builderdash.game.mode.pictionary.BDPictionaryConfig;
 import io.github.foundationgames.builderdash.game.mode.pictionary.PictionaryCommand;
@@ -21,44 +21,45 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.Holder;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import xyz.nucleoid.plasmid.api.game.GameTexts;
+import xyz.nucleoid.plasmid.api.game.GameComponents;
 import xyz.nucleoid.plasmid.api.game.GameType;
+import xyz.nucleoid.plasmid.api.game.GameTypes;
 import xyz.nucleoid.plasmid.api.game.config.CustomValuesConfig;
 import xyz.nucleoid.plasmid.api.game.config.GameConfig;
-import xyz.nucleoid.plasmid.api.game.config.GameConfigs;
+import xyz.nucleoid.plasmid.api.registry.PlasmidRegistryKeys;
 import xyz.nucleoid.plasmid.impl.game.manager.GameSpaceManagerImpl;
 
 public class Builderdash implements ModInitializer {
     public static final String ID = "builderdash";
     public static final Logger LOG = LogManager.getLogger(ID);
 
-    public static final GameType<BDPictionaryConfig> PICTIONARY = GameType.register(
+    public static final GameType<BDPictionaryConfig> PICTIONARY = GameTypes.register(
             id(BDPictionaryConfig.PICTIONARY),
             BDPictionaryConfig.CODEC,
             BDLobbyActivity::open
     );
 
-    public static final GameType<BDTelephoneConfig> TELEPHONE = GameType.register(
+    public static final GameType<BDTelephoneConfig> TELEPHONE = GameTypes.register(
             id(BDTelephoneConfig.TELEPHONE),
             BDTelephoneConfig.CODEC,
             BDLobbyActivity::open
     );
 
-    public static final GameType<BDVersusConfig> VERSUS = GameType.register(
+    public static final GameType<BDVersusConfig> VERSUS = GameTypes.register(
             id(BDVersusConfig.VERSUS),
             BDVersusConfig.CODEC,
             BDLobbyActivity::open
     );
 
     @SuppressWarnings("unchecked")
-    public static int openBuilderdashGame(CommandSourceStack cmd, ResourceLocation gameConfigId) {
+    public static int openBuilderdashGame(CommandSourceStack cmd, Identifier gameConfigId) {
         var server = cmd.getServer();
-        var key = ResourceKey.create(GameConfigs.REGISTRY_KEY, gameConfigId);
-        var registry = server.registryAccess().lookupOrThrow(GameConfigs.REGISTRY_KEY);
+        var key = ResourceKey.create(PlasmidRegistryKeys.GAME_CONFIG, gameConfigId);
+        var registry = server.registryAccess().lookupOrThrow(PlasmidRegistryKeys.GAME_CONFIG);
         var configEntry = registry.get(key).orElse(null);
 
         if (configEntry == null) {
@@ -70,12 +71,12 @@ public class Builderdash implements ModInitializer {
         if (value != null) {
             if (value.config() instanceof BDCustomWordsConfig<?> config) {
                 value = new GameConfig<>((GameType<Object>) value.type(), null, null, null, null, CustomValuesConfig.empty(),
-                        config.withCustomWords(CustomWordsPersistentState.get(server, CustomWordsPersistentState.getTypeForGame(config.getGameName()))));
+                        config.withCustomWords(CustomWordsSavedData.get(server, CustomWordsSavedData.getTypeForGame(config.getGameName()))));
             }
 
             // TODO: Handle errors?
             GameSpaceManagerImpl.get().open(Holder.direct(value)).thenAccept(space ->
-                    server.getPlayerList().broadcastSystemMessage(GameTexts.Broadcast.gameOpened(cmd, space), false));
+                    server.getPlayerList().broadcastSystemMessage(GameComponents.Broadcast.gameOpened(cmd, space), false));
             return 0;
         }
 
@@ -114,7 +115,7 @@ public class Builderdash implements ModInitializer {
                 );
     }
 
-    public static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(ID, path);
+    public static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(ID, path);
     }
 }

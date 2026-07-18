@@ -1,10 +1,10 @@
 package io.github.foundationgames.builderdash.game.player;
 
-import eu.pb4.sgui.api.gui.GuiInterface;
+import eu.pb4.sgui.api.gui.GuiLike;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
-public abstract class FlyingGuiRole<G extends GuiInterface> extends PlayerRole.Flying {
+public abstract class FlyingGuiRole<G extends GuiLike> extends PlayerRole.Flying {
     private G gui = null;
 
     public FlyingGuiRole(ServerLevel world, BDPlayer player) {

@@ -14,6 +14,7 @@ import net.minecraft.util.Brightness;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Items;
@@ -268,7 +269,7 @@ public class BDToolsState {
         }
 
         if (this.selectionDisplay == null) {
-            this.selectionDisplay = new Display.BlockDisplay(EntityType.BLOCK_DISPLAY, world);
+            this.selectionDisplay = new Display.BlockDisplay(EntityTypes.BLOCK_DISPLAY, world);
             world.addFreshEntity(this.selectionDisplay);
         }
 
@@ -397,7 +398,7 @@ public class BDToolsState {
                     var bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
                     if (nbt.contains("builderdash:filter") && bundle != null) {
                         for (var fStack : bundle.items()) {
-                            if (fStack.getItem() instanceof BlockItem block) {
+                            if (fStack.item().value() instanceof BlockItem block) {
                                 filter.add(block.getBlock());
                             } else if (fStack.is(Items.GLASS_BOTTLE)) {
                                 filter.add(Blocks.AIR);
@@ -422,14 +423,14 @@ public class BDToolsState {
                 }
                 paint.add(state);
             } else if (paintBundle != null) for (var stack : paintBundle.items()) {
-                if (stack.getItem() instanceof BlockItem block) {
+                if (stack.item().value() instanceof BlockItem block) {
                     var stateData = offhandStack.get(DataComponents.BLOCK_STATE);
                     var state = block.getBlock().defaultBlockState();
                     if (stateData != null) {
                         state = stateData.apply(state);
                     }
 
-                    for (int i = 0; i < stack.getCount(); i++) paint.add(state);
+                    for (int i = 0; i < stack.count(); i++) paint.add(state);
                 }
             }
 
@@ -459,7 +460,7 @@ public class BDToolsState {
                 return Blocks.AIR.defaultBlockState();
             }
 
-            return this.paint().get(world.random.nextInt(this.paint().size()));
+            return this.paint().get(world.getRandom().nextInt(this.paint().size()));
         }
     }
 }

@@ -3,6 +3,7 @@ package io.github.foundationgames.builderdash.game.element.title;
 import com.mojang.math.Axis;
 import com.mojang.math.Transformation;
 import io.github.foundationgames.builderdash.Builderdash;
+import net.minecraft.world.entity.EntityTypes;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
@@ -59,7 +60,7 @@ public class StyledTitle {
                 var xf = new Matrix4f().set(xfm);
                 xf.translate(x * 0.02f, y * 0.02f, -0.0002f);
 
-                var el = new Display.TextDisplay(EntityType.TEXT_DISPLAY, world);
+                var el = new Display.TextDisplay(EntityTypes.TEXT_DISPLAY, world);
                 el.setTransformation(new Transformation(xf));
                 el.setText(text);
                 el.setBackgroundColor(0);
@@ -83,7 +84,7 @@ public class StyledTitle {
         var xf = new Matrix4f().set(xfm);
         xf.translate(0, factor * 0.004f, -0.0001f);
 
-        var el = new Display.TextDisplay(EntityType.TEXT_DISPLAY, world);
+        var el = new Display.TextDisplay(EntityTypes.TEXT_DISPLAY, world);
         el.setTransformation(new Transformation(xf));
         el.setText(text);
         el.setBackgroundColor(0);
@@ -94,7 +95,7 @@ public class StyledTitle {
 
     private void addText(ServerLevel world, Matrix4f xfm, String stylized, int color) {
         var text = Component.literal(stylized).withStyle(s -> s.withColor(color));
-        var el = new Display.TextDisplay(EntityType.TEXT_DISPLAY, world);
+        var el = new Display.TextDisplay(EntityTypes.TEXT_DISPLAY, world);
         el.setTransformation(new Transformation(xfm));
         el.setText(text);
         el.setBackgroundColor(0);

@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
-import net.minecraft.ResourceLocationException;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.IdentifierException;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
@@ -23,19 +23,19 @@ public record BDGameMusic(List<Entry> musicEntries) {
 
             try {
                 int duration = 120;
-                ResourceLocation id = null;
+                Identifier id = null;
 
                 if (durAndId.length >= 2) {
                     duration = Integer.parseInt(durAndId[0]);
-                    id = ResourceLocation.tryParse(durAndId[1]);
+                    id = Identifier.tryParse(durAndId[1]);
                 } else if (durAndId.length == 1) {
-                    id = ResourceLocation.tryParse(durAndId[0]);
+                    id = Identifier.tryParse(durAndId[0]);
                 }
 
                 if (id != null) {
                     entries.add(new Entry(id, duration));
                 }
-            } catch (ResourceLocationException | NumberFormatException ex) {
+            } catch (IdentifierException | NumberFormatException ex) {
                 Builderdash.LOG.error("Error parsing game music", ex);
             }
         }
@@ -43,7 +43,7 @@ public record BDGameMusic(List<Entry> musicEntries) {
         return new BDGameMusic(entries.build());
     }
 
-    public record Entry(ResourceLocation soundId, int durationSec) {
+    public record Entry(Identifier soundId, int durationSec) {
         public void play(ServerPlayer player) {
             var server = player.level().getServer();
             var playerConfig = ServerConfigAccess.forServer(server).getPlayerConfig(player.getUUID());
@@ -51,7 +51,8 @@ public record BDGameMusic(List<Entry> musicEntries) {
             float volume = (float) playerConfig.musicVolume.get() / 100;
 
             if (volume > 0.005) {
-                player.playNotifySound(SoundEvent.createVariableRangeEvent(soundId()), SoundSource.MASTER, volume, 1);
+                // TODO: Send clientbound sound packet so it plays on master bus
+                player.playSound(SoundEvent.createVariableRangeEvent(soundId()), volume, 1);
             }
         }
     }

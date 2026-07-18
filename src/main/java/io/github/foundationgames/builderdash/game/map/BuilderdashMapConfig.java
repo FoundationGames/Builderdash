@@ -4,7 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.foundationgames.builderdash.BDUtil;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import xyz.nucleoid.map_templates.MapTemplate;
 import xyz.nucleoid.map_templates.MapTemplateSerializer;
@@ -12,11 +12,11 @@ import xyz.nucleoid.plasmid.api.game.GameOpenException;
 
 import java.io.IOException;
 
-public record BuilderdashMapConfig(int time, ResourceLocation mapId) {
+public record BuilderdashMapConfig(int time, Identifier mapId) {
     public static final Codec<BuilderdashMapConfig> CODEC = RecordCodecBuilder.create(inst ->
             inst.group(
                     Codec.INT.optionalFieldOf("time", 6000).forGetter(BuilderdashMapConfig::time),
-                    ResourceLocation.CODEC.fieldOf("map_id").forGetter(BuilderdashMapConfig::mapId)
+                    Identifier.CODEC.fieldOf("map_id").forGetter(BuilderdashMapConfig::mapId)
             ).apply(inst, BuilderdashMapConfig::new)
     );
 

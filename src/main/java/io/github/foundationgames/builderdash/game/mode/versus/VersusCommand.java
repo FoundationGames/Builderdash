@@ -3,7 +3,7 @@ package io.github.foundationgames.builderdash.game.mode.versus;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.github.foundationgames.builderdash.BDUtil;
 import io.github.foundationgames.builderdash.Builderdash;
-import io.github.foundationgames.builderdash.game.CustomWordsPersistentState;
+import io.github.foundationgames.builderdash.game.CustomWordsSavedData;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -32,7 +32,7 @@ public enum VersusCommand {;
                                 .executes(ctx -> Builderdash.openBuilderdashGame(ctx.getSource(), BDVersusConfig.DOUBLE_FAST_CONFIG))
                         )
                 );
-        return CustomWordsPersistentState.createCommand(command, BDVersusConfig.VERSUS);
+        return CustomWordsSavedData.createCommand(command, BDVersusConfig.VERSUS);
     }
 
 }

@@ -17,39 +17,39 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class CustomWordsPersistentState extends SavedData {
+public class CustomWordsSavedData extends SavedData {
     public static final String SPLIT_STRING_LIST = "[,\\n] ?+";
 
     public static final Codec<String[]> WORD_CODEC = Codec.STRING.xmap(
             ws -> ws.split("="),
             wl -> String.join("=", wl));
 
-    public static final Codec<CustomWordsPersistentState> CODEC = RecordCodecBuilder.create(inst -> inst.group(
+    public static final Codec<CustomWordsSavedData> CODEC = RecordCodecBuilder.create(inst -> inst.group(
             Codec.list(WORD_CODEC).fieldOf("custom_words").forGetter(s -> s.customWords),
             Codec.BOOL.fieldOf("replace_default").forGetter(s -> s.replaceDefault)
-    ).apply(inst, CustomWordsPersistentState::new));
+    ).apply(inst, CustomWordsSavedData::new));
 
-    public static final Map<String, SavedDataType<CustomWordsPersistentState>> TYPES = new HashMap<>();
+    public static final Map<String, SavedDataType<CustomWordsSavedData>> TYPES = new HashMap<>();
 
     public final List<String[]> customWords = new ArrayList<>();
     public boolean replaceDefault;
 
-    public CustomWordsPersistentState() {
+    public CustomWordsSavedData() {
     }
 
-    public CustomWordsPersistentState(List<String[]> words, boolean replace) {
+    public CustomWordsSavedData(List<String[]> words, boolean replace) {
         this.customWords.addAll(words);
         this.replaceDefault = replace;
     }
 
-    public static CustomWordsPersistentState get(MinecraftServer server, SavedDataType<CustomWordsPersistentState> type) {
+    public static CustomWordsSavedData get(MinecraftServer server, SavedDataType<CustomWordsSavedData> type) {
         return server.overworld().getDataStorage().computeIfAbsent(type);
     }
 
-    public static SavedDataType<CustomWordsPersistentState> getTypeForGame(String game) {
+    public static SavedDataType<CustomWordsSavedData> getTypeForGame(String game) {
         return TYPES.computeIfAbsent(game, k -> new SavedDataType<>(
-                String.format(Builderdash.ID + "_%s_custom_words", k),
-                CustomWordsPersistentState::new,
+                Builderdash.id(String.format("%s_custom_words", k)),
+                CustomWordsSavedData::new,
                 CODEC,
                 null
         ));

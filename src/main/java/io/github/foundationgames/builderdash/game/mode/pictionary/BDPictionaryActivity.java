@@ -341,7 +341,7 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
         ));
 
         var words = new String[][]{this.words.pop(), this.words.pop(), this.words.pop()};
-        setCurrentWord(words[this.world.random.nextInt(3)]);
+        setCurrentWord(words[this.world.getRandom().nextInt(3)]);
 
         this.chooseWordGui = new ChooseWordGui(this.currentBuilder.getEntity(this.world), words[0], words[1], words[2]) {
             @Override

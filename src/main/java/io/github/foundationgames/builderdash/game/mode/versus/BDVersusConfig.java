@@ -5,7 +5,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.foundationgames.builderdash.Builderdash;
 import io.github.foundationgames.builderdash.game.BDCustomWordsConfig;
-import io.github.foundationgames.builderdash.game.CustomWordsPersistentState;
+import io.github.foundationgames.builderdash.game.CustomWordsSavedData;
 import io.github.foundationgames.builderdash.game.element.title.StyledTitle;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMapConfig;
@@ -15,7 +15,7 @@ import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.common.config.WaitingLobbyConfig;
 
 import java.util.ArrayList;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.Vec3;
 
@@ -25,11 +25,11 @@ public record BDVersusConfig(
 ) implements BDCustomWordsConfig<BDVersusConfig> {
     public static final String VERSUS = "versus";
 
-    public static final ResourceLocation DEFAULT_CONFIG = Builderdash.id("versus");
-    public static final ResourceLocation FAST_CONFIG = Builderdash.id("versus_fast");
-    public static final ResourceLocation DOUBLE_CONFIG = Builderdash.id("versus_double_rounds");
-    public static final ResourceLocation DOUBLE_FAST_CONFIG = Builderdash.id("versus_fast_double_rounds");
-    public static final ResourceLocation TEST_CONFIG = Builderdash.id("versus_test");
+    public static final Identifier DEFAULT_CONFIG = Builderdash.id("versus");
+    public static final Identifier FAST_CONFIG = Builderdash.id("versus_fast");
+    public static final Identifier DOUBLE_CONFIG = Builderdash.id("versus_double_rounds");
+    public static final Identifier DOUBLE_FAST_CONFIG = Builderdash.id("versus_fast_double_rounds");
+    public static final Identifier TEST_CONFIG = Builderdash.id("versus_test");
 
     public static final MapCodec<BDVersusConfig> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             WaitingLobbyConfig.CODEC.fieldOf("players").forGetter(BDVersusConfig::players),
@@ -62,7 +62,7 @@ public record BDVersusConfig(
     }
 
     @Override
-    public BDVersusConfig withCustomWords(CustomWordsPersistentState state) {
+    public BDVersusConfig withCustomWords(CustomWordsSavedData state) {
         var words = new ArrayList<>(this.wordList().words());
 
         if (state.customWords.size() > 0) {

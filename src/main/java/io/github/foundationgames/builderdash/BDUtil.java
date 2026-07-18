@@ -7,11 +7,12 @@ import com.mojang.authlib.properties.PropertyMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import me.lucko.fabric.api.permissions.v0.Permissions;
-import net.minecraft.Util;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ResolvableProfile;
@@ -43,7 +44,7 @@ public enum BDUtil {;
     public static final String PERM_GLOBAL_TOOLBOX = Builderdash.ID + ".toolbox";
     public static final String PERM_GLOBAL_CONFIG = Builderdash.ID + ".config";
 
-    public static TemplateRegion regionOrThrow(ResourceLocation mapId, MapTemplate template, String marker) throws GameOpenException {
+    public static TemplateRegion regionOrThrow(Identifier mapId, MapTemplate template, String marker) throws GameOpenException {
         var region = template.getMetadata().getFirstRegion(marker);
         if (region == null) {
             throw new GameOpenException(Component.literal(String.format("Map %s is missing region '%s'", mapId, marker)));

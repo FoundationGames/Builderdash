@@ -2,11 +2,12 @@ package io.github.foundationgames.builderdash.tools.item;
 
 import eu.pb4.polymer.core.api.item.PolymerItem;
 import io.github.foundationgames.builderdash.tools.BDToolsState;
+import net.fabricmc.fabric.api.networking.v1.context.PacketContext;
+import net.minecraft.core.HolderLookup;
 import org.jetbrains.annotations.Nullable;
-import xyz.nucleoid.packettweaker.PacketContext;
 
 import java.util.function.Consumer;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -18,13 +19,13 @@ import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.Level;
 
 public class InstantOperationItem extends Item implements PolymerItem {
-    public static final ResourceLocation BLAZE_ROD_MODEL = ResourceLocation.parse("blaze_rod");
-    public static final ResourceLocation BREEZE_ROD_MODEL = ResourceLocation.parse("breeze_rod");
+    public static final Identifier BLAZE_ROD_MODEL = Identifier.parse("blaze_rod");
+    public static final Identifier BREEZE_ROD_MODEL = Identifier.parse("breeze_rod");
 
-    private final ResourceLocation model;
+    private final Identifier model;
     private final Consumer<BDToolsState> operation;
 
-    public InstantOperationItem(Properties settings, ResourceLocation model, Consumer<BDToolsState> operation) {
+    public InstantOperationItem(Properties settings, Identifier model, Consumer<BDToolsState> operation) {
         super(settings.rarity(Rarity.UNCOMMON)
                 .stacksTo(1));
         this.model = model;
@@ -45,7 +46,7 @@ public class InstantOperationItem extends Item implements PolymerItem {
     }
 
     @Override
-    public @Nullable ResourceLocation getPolymerItemModel(ItemStack stack, PacketContext context) {
+    public @Nullable Identifier getPolymerItemModel(ItemStack stack, PacketContext context, HolderLookup.Provider lookup) {
         return this.model;
     }
 

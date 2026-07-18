@@ -8,6 +8,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -59,8 +60,8 @@ public class LobbyGui extends HotbarGui {
     }
 
     @Override
-    public boolean onClickEntity(int entityId, EntityInteraction type, boolean isSneaking, Vec3 interactionPos) {
-        super.onClickEntity(entityId, type, isSneaking, interactionPos);
+    public boolean onEntityInteracted(int entityId, InteractionHand hand, boolean isSneaking, Vec3 interactionPos) {
+        super.onEntityInteracted(entityId, hand, isSneaking, interactionPos);
         return true;
     }
 

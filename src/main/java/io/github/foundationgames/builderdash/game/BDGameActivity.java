@@ -11,6 +11,7 @@ import io.github.foundationgames.builderdash.game.player.PlayerRole;
 import io.github.foundationgames.builderdash.game.sound.SFX;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 import xyz.nucleoid.map_templates.BlockBounds;
@@ -61,7 +62,6 @@ import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.network.protocol.game.ServerboundSetCreativeModeSlotPacket;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
@@ -113,7 +113,7 @@ public class BDGameActivity<C extends BDGameConfig> {
     public final Set<TickingAnimation> animations = new HashSet<>();
     public final BDGameMusic.Playlist musicPlaylist;
     public final Set<String> namespaceBlacklist = new HashSet<>();
-    public final Set<ResourceLocation> itemBlacklist;
+    public final Set<Identifier> itemBlacklist;
 
     protected long nextMusicTrackTime = -1;
 
@@ -147,7 +147,7 @@ public class BDGameActivity<C extends BDGameConfig> {
                 serverConfig.getServerConfig().music.get()
         ));
         this.namespaceBlacklist.addAll(serverConfig.getServerConfig().namespaceBlacklist.get());
-        this.itemBlacklist = serverConfig.getServerConfig().itemBlacklist.get().stream().map(ResourceLocation::tryParse).collect(Collectors.toSet());
+        this.itemBlacklist = serverConfig.getServerConfig().itemBlacklist.get().stream().map(Identifier::tryParse).collect(Collectors.toSet());
 
         this.respawn = map.singleZone;
 
