@@ -62,9 +62,9 @@ jar {
     inputs.property "projectName", project.archives_base_name
 
     from("LICENSE") {
-        rename { "${it}_${project.archivesBaseName}"}
+        rename { "${it}_${project.archives_base_name}"}
     }
     from("LICENSE-PICTIONARYWORDLIST") {
-        rename { "${it}_${project.archivesBaseName}"}
+        rename { "${it}_${project.archives_base_name}"}
     }
 }
