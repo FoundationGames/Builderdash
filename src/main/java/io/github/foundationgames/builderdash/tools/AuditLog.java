@@ -4,14 +4,13 @@ import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.World;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 
 public class AuditLog {
     public final int maxUndos;
@@ -22,7 +21,7 @@ public class AuditLog {
         this.maxUndos = maxUndos;
     }
 
-    public Audit audit(World world, Consumer<AuditBuilder> builder, int[] blocksChanged) {
+    public Audit audit(Level world, Consumer<AuditBuilder> builder, int[] blocksChanged) {
         var ab = new AuditBuilder(world);
         builder.accept(ab);
         var audit = ab.build();
@@ -71,7 +70,7 @@ public class AuditLog {
             cursor--;
         }
 
-        cursor = MathHelper.clamp(cursor, -1, audits.size() - 1);
+        cursor = Mth.clamp(cursor, -1, audits.size() - 1);
     }
 
     // Block Palette: Maps block states used in this audit to integer indices
@@ -79,9 +78,9 @@ public class AuditLog {
     //                     The first 32 bits are the index of <blockPalette> of the original block, the last 32 bits are
     //                     the index of the new changed block
     // Modifications: A mapping of long-packed BlockPos positions to conversionPalette indices
-    public record Audit(World world, List<BlockState> blockPalette, LongList conversionPalette, Long2IntMap modifications) {
+    public record Audit(Level world, List<BlockState> blockPalette, LongList conversionPalette, Long2IntMap modifications) {
         public void apply(boolean undo, int[] blocksChanged) {
-            var pos = new BlockPos.Mutable();
+            var pos = new BlockPos.MutableBlockPos();
             int changed = 0;
             for (var e : modifications().long2IntEntrySet()) {
                 pos.set(e.getLongKey());
@@ -94,7 +93,7 @@ public class AuditLog {
                     sID = (int) conv; // new
                 }
 
-                world().setBlockState(pos, blockPalette().get(sID), 3, 0);
+                world().setBlock(pos, blockPalette().get(sID), 3, 0);
                 changed++;
             }
 
@@ -105,13 +104,13 @@ public class AuditLog {
     }
 
     public static class AuditBuilder {
-        private final World world;
+        private final Level world;
 
         private final List<BlockState> blockPalette = new ArrayList<>();
         private final LongList convPalette = new LongArrayList();
         private final Long2IntMap modifications = new Long2IntOpenHashMap();
 
-        public AuditBuilder(World world) {
+        public AuditBuilder(Level world) {
             this.world = world;
         }
 

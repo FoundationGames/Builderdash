@@ -4,17 +4,17 @@ import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import eu.pb4.sgui.api.gui.SimpleGui;
 import io.github.foundationgames.builderdash.tools.BDToolsItems;
 import io.github.foundationgames.builderdash.tools.item.FilterItemStack;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.ScreenHandlerType;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
 public class BDToolboxGui extends SimpleGui {
-    public static final Text TITLE = Text.translatable("gui.builderdash.toolbox");
+    public static final Component TITLE = Component.translatable("gui.builderdash.toolbox");
 
-    public BDToolboxGui(ServerPlayerEntity player) {
-        super(ScreenHandlerType.GENERIC_9X3, player, false);
+    public BDToolboxGui(ServerPlayer player) {
+        super(MenuType.GENERIC_9x3, player, false);
 
         setTitle(TITLE);
 
@@ -35,10 +35,10 @@ public class BDToolboxGui extends SimpleGui {
 
     private GuiElementBuilder item(ItemStack item) {
         return GuiElementBuilder.from(item)
-                .setCallback(clickType -> player.getInventory().insertStack(item.copy()));
+                .setCallback(clickType -> player.getInventory().add(item.copy()));
     }
 
     private GuiElementBuilder item(Item item) {
-        return item(item.getDefaultStack());
+        return item(item.getDefaultInstance());
     }
 }

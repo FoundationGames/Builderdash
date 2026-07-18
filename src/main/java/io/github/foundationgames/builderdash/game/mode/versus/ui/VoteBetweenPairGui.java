@@ -6,15 +6,13 @@ import eu.pb4.sgui.api.gui.HotbarGui;
 import eu.pb4.sgui.api.gui.SlotGuiInterface;
 import io.github.foundationgames.builderdash.BDUtil;
 import io.github.foundationgames.builderdash.game.mode.versus.BDVersusActivity;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 
 public class VoteBetweenPairGui extends HotbarGui {
     public static final String VOTE_FOR_BUILD = "item.builderdash.versus.vote_for_build";
@@ -22,7 +20,7 @@ public class VoteBetweenPairGui extends HotbarGui {
 
     private final List<VoteElement> voteElements = new ArrayList<>();
 
-    public VoteBetweenPairGui(ServerPlayerEntity player, BDVersusActivity versus) {
+    public VoteBetweenPairGui(ServerPlayer player, BDVersusActivity versus) {
         super(player);
         this.versus = versus;
 
@@ -52,19 +50,19 @@ public class VoteBetweenPairGui extends HotbarGui {
             this.buildIndex = buildIndex;
         }
 
-        private static ItemStack createIcon(String[] textures, BDVersusActivity versus, ServerPlayerEntity player, int buildIndex) {
+        private static ItemStack createIcon(String[] textures, BDVersusActivity versus, ServerPlayer player, int buildIndex) {
             var stack = BDUtil.customHead(textures[versus.getVote(player) == buildIndex ? 1 : 0]);
-            stack.set(DataComponentTypes.ITEM_NAME, Text.translatable(VOTE_FOR_BUILD, buildIndex + 1).formatted(Formatting.GREEN));
+            stack.set(DataComponents.ITEM_NAME, Component.translatable(VOTE_FOR_BUILD, buildIndex + 1).withStyle(ChatFormatting.GREEN));
             return stack;
         }
 
-        private void onClick(int index, ClickType type, SlotActionType action, SlotGuiInterface gui) {
+        private void onClick(int index, ClickType type, net.minecraft.world.inventory.ClickType action, SlotGuiInterface gui) {
             versus.setVote(player, buildIndex);
             voteElements.forEach(VoteElement::update);
         }
 
         public void update() {
-            this.getItemStack().set(DataComponentTypes.PROFILE,
+            this.getItemStack().set(DataComponents.PROFILE,
                     BDUtil.skinProfile(textures[versus.getVote(player) == buildIndex ? 1 : 0]));
         }
 

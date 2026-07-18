@@ -1,9 +1,9 @@
 package io.github.foundationgames.builderdash.game.map;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.gen.chunk.ChunkGenerator;
+import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.phys.Vec3;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.map_templates.MapTemplate;
 import xyz.nucleoid.plasmid.api.game.world.generator.TemplateChunkGenerator;
@@ -18,11 +18,11 @@ public class BuilderdashMap {
     public final BuildZone privateZoneTemplate;
     public final BuildZone singleZone;
     public final BuildZone doubleZone;
-    public final Vec3d titlePos;
+    public final Vec3 titlePos;
 
     public List<BuildZone> cachedPrivateZones;
 
-    public BuilderdashMap(MapTemplate template, BuilderdashMapConfig config, BlockBounds spawn, BlockPos buildZonesStart, BuildZone privateZoneTemplate, BuildZone singleZone, BuildZone doubleZone, Vec3d titlePos) {
+    public BuilderdashMap(MapTemplate template, BuilderdashMapConfig config, BlockBounds spawn, BlockPos buildZonesStart, BuildZone privateZoneTemplate, BuildZone singleZone, BuildZone doubleZone, Vec3 titlePos) {
         this.template = template;
         this.config = config;
         this.spawn = spawn;

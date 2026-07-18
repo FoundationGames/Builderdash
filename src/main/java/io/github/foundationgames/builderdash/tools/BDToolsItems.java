@@ -4,13 +4,12 @@ import io.github.foundationgames.builderdash.Builderdash;
 import io.github.foundationgames.builderdash.tools.item.AreaOperationItem;
 import io.github.foundationgames.builderdash.tools.item.DistantOperationItem;
 import io.github.foundationgames.builderdash.tools.item.InstantOperationItem;
-import net.minecraft.item.Item;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-
 import java.util.function.Function;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.Item;
 
 public class BDToolsItems {
     public static final InstantOperationItem UNDO = register(InstantOperationItem::undo, "tool_undo");
@@ -22,10 +21,10 @@ public class BDToolsItems {
     public static final DistantOperationItem BRUSH_MED = register(DistantOperationItem::medBrush, "tool_brush_med");
     public static final DistantOperationItem BRUSH_LARGE = register(DistantOperationItem::largeBrush, "tool_brush_large");
 
-    public static <T extends Item> T register(Function<Item.Settings, T> item, String name) {
+    public static <T extends Item> T register(Function<Item.Properties, T> item, String name) {
         var id = Builderdash.id(name);
-        return Registry.register(Registries.ITEM, id,
-                item.apply(new Item.Settings().registryKey(RegistryKey.of(RegistryKeys.ITEM, id))));
+        return Registry.register(BuiltInRegistries.ITEM, id,
+                item.apply(new Item.Properties().setId(ResourceKey.create(Registries.ITEM, id))));
     }
 
     public static void init() {

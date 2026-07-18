@@ -1,24 +1,24 @@
 package io.github.foundationgames.builderdash.game.player;
 
 import io.github.foundationgames.builderdash.tools.BDToolsState;
-import net.minecraft.network.message.MessageType;
-import net.minecraft.network.message.SignedMessage;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.GameMode;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.ChatType;
+import net.minecraft.network.chat.PlayerChatMessage;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.GameType;
 
 public class PlayerRole {
-    public final ServerWorld world;
+    public final ServerLevel world;
     public final BDPlayer player;
 
     protected BDToolsState tools;
 
-    public PlayerRole(ServerWorld world, BDPlayer player) {
+    public PlayerRole(ServerLevel world, BDPlayer player) {
         this.world = world;
         this.player = player;
     }
 
-    public boolean handleChatMessage(SignedMessage signedMessage, MessageType.Parameters parameters) {
+    public boolean handleChatMessage(PlayerChatMessage signedMessage, ChatType.Bound parameters) {
         return true;
     }
 
@@ -26,8 +26,8 @@ public class PlayerRole {
         return false;
     }
 
-    public GameMode getGameMode() {
-        return GameMode.ADVENTURE;
+    public GameType getGameMode() {
+        return GameType.ADVENTURE;
     }
 
     public void init() {
@@ -48,7 +48,7 @@ public class PlayerRole {
     }
 
     public static class Flying extends PlayerRole {
-        public Flying(ServerWorld world, BDPlayer player) {
+        public Flying(ServerLevel world, BDPlayer player) {
             super(world, player);
         }
 
@@ -57,11 +57,11 @@ public class PlayerRole {
             super.init();
 
             this.player.player.ifOnline(this.world, s -> {
-                s.getInventory().clear();
+                s.getInventory().clearContent();
 
-                if (!s.getAbilities().allowFlying) {
-                    s.getAbilities().allowFlying = true;
-                    s.sendAbilitiesUpdate();
+                if (!s.getAbilities().mayfly) {
+                    s.getAbilities().mayfly = true;
+                    s.onUpdateAbilities();
                 }
             });
         }

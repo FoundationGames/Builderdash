@@ -8,14 +8,13 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import io.github.foundationgames.builderdash.Builderdash;
 import io.github.foundationgames.builderdash.game.CustomWordsPersistentState;
-import net.minecraft.command.CommandSource;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.Text;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
 
 public abstract class ConfigOption<T> {
     protected final Config owner;
@@ -36,7 +35,7 @@ public abstract class ConfigOption<T> {
 
     protected abstract ArgumentType<?> commandArgType();
 
-    public final <S extends CommandSource> RequiredArgumentBuilder<S, ?> commandArg(String name) {
+    public final <S extends SharedSuggestionProvider> RequiredArgumentBuilder<S, ?> commandArg(String name) {
         return RequiredArgumentBuilder.argument(name, this.commandArgType());
     }
 
@@ -62,14 +61,14 @@ public abstract class ConfigOption<T> {
         return get().toString();
     }
 
-    public Text getCopyableValueText() {
+    public Component getCopyableValueText() {
         var value = getString();
-        return Text.literal(value).styled(s ->
+        return Component.literal(value).withStyle(s ->
                 s.withColor(0x8fabff).withClickEvent(new ClickEvent.CopyToClipboard(value))
         );
     }
 
-    public abstract <S extends CommandSource> void setFromCommandAndSave(CommandContext<S> ctx, String argName);
+    public abstract <S extends SharedSuggestionProvider> void setFromCommandAndSave(CommandContext<S> ctx, String argName);
 
     public static class BooleanOption extends ConfigOption<Boolean> {
         public BooleanOption(String key, Boolean initialValue, Config owner) {
@@ -94,7 +93,7 @@ public abstract class ConfigOption<T> {
         }
 
         @Override
-        public <S extends CommandSource> void setFromCommandAndSave(CommandContext<S> ctx, String argName) {
+        public <S extends SharedSuggestionProvider> void setFromCommandAndSave(CommandContext<S> ctx, String argName) {
             this.setAndSave(BoolArgumentType.getBool(ctx, argName));
         }
     }
@@ -130,7 +129,7 @@ public abstract class ConfigOption<T> {
         }
 
         @Override
-        public <S extends CommandSource> void setFromCommandAndSave(CommandContext<S> ctx, String argName) {
+        public <S extends SharedSuggestionProvider> void setFromCommandAndSave(CommandContext<S> ctx, String argName) {
             this.setAndSave(IntegerArgumentType.getInteger(ctx, argName));
         }
     }
@@ -171,7 +170,7 @@ public abstract class ConfigOption<T> {
         }
 
         @Override
-        public <S extends CommandSource> void setFromCommandAndSave(CommandContext<S> ctx, String argName) {
+        public <S extends SharedSuggestionProvider> void setFromCommandAndSave(CommandContext<S> ctx, String argName) {
             this.setAndSave(parse(StringArgumentType.getString(ctx, argName)));
         }
     }

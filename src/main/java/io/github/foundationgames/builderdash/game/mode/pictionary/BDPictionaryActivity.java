@@ -17,10 +17,6 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import net.minecraft.entity.boss.BossBar;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.Nullable;
 import xyz.nucleoid.plasmid.api.game.GameActivity;
 import xyz.nucleoid.plasmid.api.game.GameCloseReason;
@@ -35,13 +31,17 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.BossEvent;
 
 public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
-    public static final Text IS_CHOOSING_WORD = Text.translatable("title.builderdash.pictionary.is_choosing_word").formatted(Formatting.GOLD);
-    public static final Text IS_BUILDING = Text.translatable("label.builderdash.pictionary.is_building").formatted(Formatting.GOLD);
-    public static final Text WORD_CHOSEN = Text.translatable("title.builderdash.pictionary.word_chosen").formatted(Formatting.AQUA);
-    public static final Text WAS_THE_WORD = Text.translatable("title.builderdash.pictionary.was_the_word").formatted(Formatting.YELLOW);
-    public static final Text GUESS_IN_CHAT = Text.translatable("message.builderdash.pictionary.guess_in_chat").formatted(Formatting.GOLD);
+    public static final Component IS_CHOOSING_WORD = Component.translatable("title.builderdash.pictionary.is_choosing_word").withStyle(ChatFormatting.GOLD);
+    public static final Component IS_BUILDING = Component.translatable("label.builderdash.pictionary.is_building").withStyle(ChatFormatting.GOLD);
+    public static final Component WORD_CHOSEN = Component.translatable("title.builderdash.pictionary.word_chosen").withStyle(ChatFormatting.AQUA);
+    public static final Component WAS_THE_WORD = Component.translatable("title.builderdash.pictionary.was_the_word").withStyle(ChatFormatting.YELLOW);
+    public static final Component GUESS_IN_CHAT = Component.translatable("message.builderdash.pictionary.guess_in_chat").withStyle(ChatFormatting.GOLD);
 
     public static final String GUESSED_WORD = "message.builderdash.pictionary.player_guessed_word";
     public static final String HINT = "label.builderdash.pictionary.hint";
@@ -58,8 +58,8 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
 
     public final IntList hiddenChars = new IntArrayList();
     public int revealedChars = -1;
-    private @Nullable Text hintText = null;
-    private Text promptText = Text.empty();
+    private @Nullable Component hintText = null;
+    private Component promptText = Component.empty();
 
     private final Set<PlayerRef> notYetGuessed = new HashSet<>();
     private int bonusAwardPoints = 10;
@@ -70,7 +70,7 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
 
     private final PrivateBuildZoneManager privateBuildZones;
 
-    protected BDPictionaryActivity(GameSpace space, GameActivity game, ServerWorld world, BuilderdashMap map, BDPictionaryConfig config) {
+    protected BDPictionaryActivity(GameSpace space, GameActivity game, ServerLevel world, BuilderdashMap map, BDPictionaryConfig config) {
         super(space, game, world, map, config);
 
         this.words = WordQueue.ofShuffled(config.wordList());
@@ -86,7 +86,7 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
         this.privateBuildZones = new PrivateBuildZoneManager(world, map.singleZone, map.buildZonesStart, 1 + (int)Math.sqrt(this.participants.size()));
     }
 
-    public static void open(GameSpace gameSpace, ServerWorld world, BuilderdashMap map, BDPictionaryConfig config) {
+    public static void open(GameSpace gameSpace, ServerLevel world, BuilderdashMap map, BDPictionaryConfig config) {
         gameSpace.setActivity(game -> new BDPictionaryActivity(gameSpace, game, world, map, config));
     }
 
@@ -96,7 +96,7 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
 
     public void onPlayerCorrectGuess(BDPlayer player) {
         player.player.ifOnline(this.gameSpace, s -> this.gameSpace.getPlayers().sendMessage(
-                Text.translatable(GUESSED_WORD, s.getDisplayName()).formatted(Formatting.GREEN)));
+                Component.translatable(GUESSED_WORD, s.getDisplayName()).withStyle(ChatFormatting.GREEN)));
 
         int award = 20;
 
@@ -180,12 +180,12 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
                 if (this.hintText != null) for (var player : this.participants.values()) {
                     if (player.currentRole instanceof PictionaryGuesserRole role && !role.alreadyGuessed) {
                         player.player.ifOnline(this.gameSpace, s ->
-                                s.sendMessageToClient(this.hintText, true));
+                                s.sendSystemMessage(this.hintText, true));
                     }
                 }
 
                 this.currentBuilder.ifOnline(this.gameSpace, s ->
-                        s.sendMessageToClient(this.promptText, true));
+                        s.sendSystemMessage(this.promptText, true));
             }
         }
     }
@@ -203,7 +203,7 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
         }
     }
 
-    private Text generateHintText() {
+    private Component generateHintText() {
         if (this.revealedChars < 0) {
             return null;
         }
@@ -225,7 +225,7 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
             }
         }
 
-        return Text.translatable(HINT, Text.literal(builder.toString())).formatted(Formatting.YELLOW);
+        return Component.translatable(HINT, Component.literal(builder.toString())).withStyle(ChatFormatting.YELLOW);
     }
 
     private void updateDisplay() {
@@ -235,10 +235,10 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
 
         switch (this.phase) {
             case BUILDING, CHOOSE_WORD -> {
-                Text builderName = Text.empty();
+                Component builderName = Component.empty();
                 var builder = this.currentBuilder.getEntity(this.gameSpace);
                 if (builder != null) {
-                    builderName = Text.literal(builder.getNameForScoreboard()).formatted(Formatting.YELLOW);
+                    builderName = Component.literal(builder.getScoreboardName()).withStyle(ChatFormatting.YELLOW);
                 }
 
                 var content = GenericContent.builder()
@@ -314,7 +314,7 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
         this.timeToPhaseChange = this.config.wordChooseTime() * SEC;
         this.totalTime = this.timeToPhaseChange;
 
-        this.setTimerBar(BossBar.Color.YELLOW, BossBar.Style.NOTCHED_6);
+        this.setTimerBar(BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.NOTCHED_6);
 
         var buildZone = this.privateBuildZones.requestNewBuildZone();
         this.respawn = buildZone;
@@ -335,7 +335,7 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
         }
 
         this.currentBuilder.ifOnline(this.gameSpace, s -> this.gameSpace.getPlayers().showTitle(
-                Text.literal(s.getNameForScoreboard()).formatted(Formatting.YELLOW),
+                Component.literal(s.getScoreboardName()).withStyle(ChatFormatting.YELLOW),
                 IS_CHOOSING_WORD,
                 10, 5 * SEC, 10
         ));
@@ -371,7 +371,7 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
             }
         }
 
-        this.promptText = Text.translatable(YOU_ARE_BUILDING, wordLabel).formatted(Formatting.GREEN);
+        this.promptText = Component.translatable(YOU_ARE_BUILDING, wordLabel).withStyle(ChatFormatting.GREEN);
 
         Collections.shuffle(this.hiddenChars);
     }
@@ -389,15 +389,15 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
             this.chooseWordGui = null;
         }
 
-        this.gameSpace.getPlayers().showTitle(Text.empty(), WORD_CHOSEN, 10, 3 * SEC, 10);
+        this.gameSpace.getPlayers().showTitle(Component.empty(), WORD_CHOSEN, 10, 3 * SEC, 10);
         for (var player : this.participants.values()) {
             if (player.currentRole instanceof PictionaryGuesserRole) {
                 player.player.ifOnline(this.gameSpace, s ->
-                        s.sendMessageToClient(GUESS_IN_CHAT, false));
+                        s.sendSystemMessage(GUESS_IN_CHAT, false));
             }
         }
 
-        this.setTimerBar(BossBar.Color.BLUE, BossBar.Style.NOTCHED_20);
+        this.setTimerBar(BossEvent.BossBarColor.BLUE, BossEvent.BossBarOverlay.NOTCHED_20);
         this.timesToAnnounce.add(TIME_ONE_MIN);
         this.timesToAnnounce.add(TIME_THIRTY_SEC);
         this.timesToAnnounce.add(TIME_TEN_SEC);
@@ -416,7 +416,7 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
         this.totalTime = this.timeToPhaseChange;
 
         if (this.currentWord != null && this.currentWord.length > 0 && this.currentWord[0] != null) {
-            var wordText = Text.literal(this.currentWord[0]).formatted(Formatting.GREEN);
+            var wordText = Component.literal(this.currentWord[0]).withStyle(ChatFormatting.GREEN);
 
             this.gameSpace.getPlayers().showTitle(
                     wordText,
@@ -441,7 +441,7 @@ public class BDPictionaryActivity extends BDGameActivity<BDPictionaryConfig> {
         }
 
         this.removeTimerInfo();
-        this.promptText = Text.empty();
+        this.promptText = Component.empty();
 
         this.animations.add(SFX.PICTIONARY_WORD_REVEAL.play(this.world));
     }

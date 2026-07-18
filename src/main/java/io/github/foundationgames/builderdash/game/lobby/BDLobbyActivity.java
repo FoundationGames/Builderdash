@@ -5,21 +5,21 @@ import io.github.foundationgames.builderdash.game.BDPlayerLogic;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.NoteBlock;
-import net.minecraft.entity.boss.BossBar;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.network.packet.c2s.play.CloseHandledScreenC2SPacket;
-import net.minecraft.registry.tag.BlockTags;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.GameMode;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.BossEvent;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.NoteBlock;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
 import xyz.nucleoid.plasmid.api.game.GameActivity;
@@ -43,19 +43,19 @@ import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 import xyz.nucleoid.stimuli.event.world.ExplosionDetonatedEvent;
 
 public class BDLobbyActivity<C extends BDGameConfig> {
-    public static final Text WAITING = Text.translatable("text.plasmid.game.waiting_lobby.bar.waiting");
-    public static final Text NOT_ENOUGH_PLAYERS = Text.translatable("label.builderdash.lobby.not_enough_players").formatted(Formatting.YELLOW);
-    public static final Text[] NOT_ENOUGH_READY = {
-            Text.translatable("label.builderdash.lobby.not_enough_ready.1").formatted(Formatting.YELLOW),
-            Text.translatable("label.builderdash.lobby.not_enough_ready.2").formatted(Formatting.YELLOW)
+    public static final Component WAITING = Component.translatable("text.plasmid.game.waiting_lobby.bar.waiting");
+    public static final Component NOT_ENOUGH_PLAYERS = Component.translatable("label.builderdash.lobby.not_enough_players").withStyle(ChatFormatting.YELLOW);
+    public static final Component[] NOT_ENOUGH_READY = {
+            Component.translatable("label.builderdash.lobby.not_enough_ready.1").withStyle(ChatFormatting.YELLOW),
+            Component.translatable("label.builderdash.lobby.not_enough_ready.2").withStyle(ChatFormatting.YELLOW)
     };
-    public static final Text[] HALF_READY = {
-            Text.translatable("label.builderdash.lobby.half_ready.1").formatted(Formatting.GREEN),
-            Text.translatable("label.builderdash.lobby.half_ready.2").formatted(Formatting.GREEN)
+    public static final Component[] HALF_READY = {
+            Component.translatable("label.builderdash.lobby.half_ready.1").withStyle(ChatFormatting.GREEN),
+            Component.translatable("label.builderdash.lobby.half_ready.2").withStyle(ChatFormatting.GREEN)
     };
-    public static final Text[] MAJORITY_READY = {
-            Text.translatable("label.builderdash.lobby.majority_ready.1").formatted(Formatting.LIGHT_PURPLE),
-            Text.translatable("label.builderdash.lobby.majority_ready.2").formatted(Formatting.LIGHT_PURPLE)
+    public static final Component[] MAJORITY_READY = {
+            Component.translatable("label.builderdash.lobby.majority_ready.1").withStyle(ChatFormatting.LIGHT_PURPLE),
+            Component.translatable("label.builderdash.lobby.majority_ready.2").withStyle(ChatFormatting.LIGHT_PURPLE)
     };
 
     public static final String PLAYERS_READY = "label.builderdash.lobby.players_ready";
@@ -67,7 +67,7 @@ public class BDLobbyActivity<C extends BDGameConfig> {
     private final BuilderdashMap map;
     private final C config;
     private final BDPlayerLogic playerLogic;
-    private final ServerWorld world;
+    private final ServerLevel world;
     private final SidebarWidget scoreboard;
     private final BossBarWidget bossBar;
 
@@ -77,7 +77,7 @@ public class BDLobbyActivity<C extends BDGameConfig> {
 
     private boolean titleSpawned = false;
 
-    private BDLobbyActivity(GameSpace gameSpace, GameActivity game, ServerWorld world, BuilderdashMap map, C config) {
+    private BDLobbyActivity(GameSpace gameSpace, GameActivity game, ServerLevel world, BuilderdashMap map, C config) {
         this.gameSpace = gameSpace;
         this.map = map;
         this.config = config;
@@ -87,8 +87,8 @@ public class BDLobbyActivity<C extends BDGameConfig> {
         GlobalWidgets widgets = GlobalWidgets.addTo(game);
 
         var cfg = gameSpace.getMetadata().sourceConfig();
-        this.scoreboard = widgets.addSidebar(GameConfig.shortName(cfg).copy().formatted(Formatting.GOLD));
-        this.bossBar = widgets.addBossBar(WAITING, BossBar.Color.YELLOW, BossBar.Style.PROGRESS);
+        this.scoreboard = widgets.addSidebar(GameConfig.shortName(cfg).copy().withStyle(ChatFormatting.GOLD));
+        this.bossBar = widgets.addBossBar(WAITING, BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.PROGRESS);
     }
 
     public static <C extends BDGameConfig> GameOpenProcedure open(GameOpenContext<C> context) {
@@ -110,16 +110,16 @@ public class BDLobbyActivity<C extends BDGameConfig> {
             game.deny(GameRuleType.USE_ITEMS).deny(GameRuleType.USE_ENTITIES);
             game.listen(ExplosionDetonatedEvent.EVENT, (explosion, blocksToDestroy) -> EventResult.DENY);
             game.listen(BlockUseEvent.EVENT, (player, hand, hitResult) -> {
-                var state = player.getEntityWorld().getBlockState(hitResult.getBlockPos());
-                if (state.isIn(BlockTags.BUTTONS) || state.isOf(Blocks.CHEST) || state.isOf(Blocks.BARREL)) {
-                    return ActionResult.PASS;
+                var state = player.level().getBlockState(hitResult.getBlockPos());
+                if (state.is(BlockTags.BUTTONS) || state.is(Blocks.CHEST) || state.is(Blocks.BARREL)) {
+                    return InteractionResult.PASS;
                 }
 
-                return ActionResult.FAIL;
+                return InteractionResult.FAIL;
             });
 
             game.listen(PlayerC2SPacketEvent.EVENT, (player, packet) -> {
-                if (packet instanceof CloseHandledScreenC2SPacket) {
+                if (packet instanceof ServerboundContainerClosePacket) {
                     var ref = PlayerRef.of(player);
 
                     var lp = lobby.players.get(ref);
@@ -141,7 +141,7 @@ public class BDLobbyActivity<C extends BDGameConfig> {
         });
     }
 
-    private Vec3d getSpawnPos() {
+    private Vec3 getSpawnPos() {
         return this.playerLogic.getSpawnPos(this.world.getRandom(), this.map.spawn);
     }
 
@@ -178,8 +178,8 @@ public class BDLobbyActivity<C extends BDGameConfig> {
 
             if (this.timeUntilStart % SEC == 0) {
                 if (this.timeUntilStart <= 5 * SEC) {
-                    this.gameSpace.getPlayers().playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP,
-                            SoundCategory.MASTER, 0.7f, NoteBlock.getNotePitch(9));
+                    this.gameSpace.getPlayers().playSound(SoundEvents.EXPERIENCE_ORB_PICKUP,
+                            SoundSource.MASTER, 0.7f, NoteBlock.getPitchFromNote(9));
                 }
 
                 this.updateInfo();
@@ -199,22 +199,22 @@ public class BDLobbyActivity<C extends BDGameConfig> {
     private void updateInfo() {
         this.scoreboard.clearLines();
 
-        this.scoreboard.addLines(Text.empty());
+        this.scoreboard.addLines(Component.empty());
 
         if (this.players.size() < this.config.getLobbyConfig().minPlayers()) {
             this.scoreboard.addLines(NOT_ENOUGH_PLAYERS);
 
             this.bossBar.setProgress(1);
             this.bossBar.setTitle(WAITING);
-            this.bossBar.setStyle(BossBar.Color.YELLOW, BossBar.Style.PROGRESS);
+            this.bossBar.setStyle(BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.PROGRESS);
         } else {
             int ready = 0;
             for (var p : this.players.values()) {
                 if (p.ready) ready++;
             }
 
-            this.scoreboard.addLines(Text.translatable(PLAYERS_READY, ready, this.players.size()).formatted(Formatting.AQUA));
-            this.scoreboard.addLines(Text.empty());
+            this.scoreboard.addLines(Component.translatable(PLAYERS_READY, ready, this.players.size()).withStyle(ChatFormatting.AQUA));
+            this.scoreboard.addLines(Component.empty());
 
             boolean timerBar = true;
 
@@ -228,12 +228,12 @@ public class BDLobbyActivity<C extends BDGameConfig> {
             }
 
             this.bossBar.setProgress((float) this.timeUntilStart / (this.config.getLobbyConfig().countdown().fullSeconds() * SEC));
-            this.bossBar.setTitle(timerBar ? Text.translatable(STARTING_IN, this.timeUntilStart / SEC)
+            this.bossBar.setTitle(timerBar ? Component.translatable(STARTING_IN, this.timeUntilStart / SEC)
                     : WAITING);
-            this.bossBar.setStyle(BossBar.Color.BLUE, timerBar ? BossBar.Style.NOTCHED_20 : BossBar.Style.PROGRESS);
+            this.bossBar.setStyle(BossEvent.BossBarColor.BLUE, timerBar ? BossEvent.BossBarOverlay.NOTCHED_20 : BossEvent.BossBarOverlay.PROGRESS);
         }
 
-        this.scoreboard.addLines(Text.empty());
+        this.scoreboard.addLines(Component.empty());
     }
 
     public void checkCanStart() {
@@ -250,7 +250,7 @@ public class BDLobbyActivity<C extends BDGameConfig> {
         updateInfo();
     }
 
-    private void addPlayer(ServerPlayerEntity player) {
+    private void addPlayer(ServerPlayer player) {
         this.spawnPlayer(player);
 
         var ref = PlayerRef.of(player);
@@ -258,7 +258,7 @@ public class BDLobbyActivity<C extends BDGameConfig> {
         this.checkCanStart();
     }
 
-    private void removePlayer(ServerPlayerEntity player) {
+    private void removePlayer(ServerPlayer player) {
         var ref = PlayerRef.of(player);
 
         var lp = this.players.remove(ref);
@@ -267,14 +267,14 @@ public class BDLobbyActivity<C extends BDGameConfig> {
         }
     }
 
-    private EventResult onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
+    private EventResult onPlayerDeath(ServerPlayer player, DamageSource source) {
         player.setHealth(20.0f);
         this.spawnPlayer(player);
         return EventResult.DENY;
     }
 
-    private void spawnPlayer(ServerPlayerEntity player) {
-        this.playerLogic.resetPlayer(player, GameMode.ADVENTURE);
+    private void spawnPlayer(ServerPlayer player) {
+        this.playerLogic.resetPlayer(player, GameType.ADVENTURE);
         this.playerLogic.spawnPlayer(player, this.map.spawn, this.map.spawn.center());
     }
 }

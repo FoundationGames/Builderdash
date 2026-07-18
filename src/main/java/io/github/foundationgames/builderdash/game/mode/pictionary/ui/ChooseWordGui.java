@@ -2,13 +2,13 @@ package io.github.foundationgames.builderdash.game.mode.pictionary.ui;
 
 import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import eu.pb4.sgui.api.gui.SimpleGui;
-import net.minecraft.item.Items;
-import net.minecraft.screen.ScreenHandlerType;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.Items;
 
 public class ChooseWordGui extends SimpleGui {
-    public static final Text TITLE = Text.translatable("gui.builderdash.pictionary.choose_word");
+    public static final Component TITLE = Component.translatable("gui.builderdash.pictionary.choose_word");
     public static final int[] WORD_IDX_TO_SLOT_ID = {1, 4, 7};
 
     public final String[] word1;
@@ -17,8 +17,8 @@ public class ChooseWordGui extends SimpleGui {
 
     public boolean stayOpen = true;
 
-    public ChooseWordGui(ServerPlayerEntity player, String[] word1, String[] word2, String[] word3) {
-        super(ScreenHandlerType.GENERIC_9X1, player, false);
+    public ChooseWordGui(ServerPlayer player, String[] word1, String[] word2, String[] word3) {
+        super(MenuType.GENERIC_9x1, player, false);
         this.word1 = word1;
         this.word2 = word2;
         this.word3 = word3;
@@ -34,7 +34,7 @@ public class ChooseWordGui extends SimpleGui {
 
     private void addWordItem(int index, String[] word) {
         this.setSlot(WORD_IDX_TO_SLOT_ID[index], new GuiElementBuilder(Items.BOOK)
-                .setName(Text.literal(word[0])).glow()
+                .setName(Component.literal(word[0])).glow()
                 .setCallback(clickType -> this.wordChosen(word)));
     }
 

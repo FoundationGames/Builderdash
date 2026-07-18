@@ -1,27 +1,27 @@
 package io.github.foundationgames.builderdash.tools;
 
+import com.mojang.math.Transformation;
 import io.github.foundationgames.builderdash.BDUtil;
 import io.github.foundationgames.builderdash.tools.ui.BDToolboxGui;
 import me.lucko.fabric.api.permissions.v0.Permissions;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.decoration.Brightness;
-import net.minecraft.entity.decoration.DisplayEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.Items;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.math.AffineTransformation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Brightness;
+import net.minecraft.world.entity.Display;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import xyz.nucleoid.map_templates.BlockBounds;
@@ -40,8 +40,8 @@ public class BDToolsState {
     public static final String UNDO = "message.builderdash.tool.undo";
     public static final String REDO = "message.builderdash.tool.redo";
     public static final String OPERATION = "message.builderdash.tool.operation";
-    public static final Text UNDO_FAIL = Text.translatable("message.builderdash.tool.undo_fail").formatted(Formatting.RED);
-    public static final Text REDO_FAIL = Text.translatable("message.builderdash.tool.redo_fail").formatted(Formatting.RED);
+    public static final Component UNDO_FAIL = Component.translatable("message.builderdash.tool.undo_fail").withStyle(ChatFormatting.RED);
+    public static final Component REDO_FAIL = Component.translatable("message.builderdash.tool.redo_fail").withStyle(ChatFormatting.RED);
 
     public static final int DEFAULT_MAX_UNDOS = 16;
     private static final Map<PlayerRef, Deque<BDToolsState>> PLAYERS = new HashMap<>();
@@ -52,9 +52,9 @@ public class BDToolsState {
     public final @Nullable BlockBounds restriction;
 
     private BlockPos selectStart = null;
-    private final BlockPos.Mutable selectEnd = new BlockPos.Mutable();
+    private final BlockPos.MutableBlockPos selectEnd = new BlockPos.MutableBlockPos();
 
-    private DisplayEntity.BlockDisplayEntity selectionDisplay = null;
+    private Display.BlockDisplay selectionDisplay = null;
 
     public BDToolsState(MinecraftServer server, PlayerRef player, int maxUndos, @Nullable BlockBounds restriction) {
         this.server = server;
@@ -69,7 +69,7 @@ public class BDToolsState {
         return false;
     }
 
-    public void openToolbox(ServerPlayerEntity player) {
+    public void openToolbox(ServerPlayer player) {
         if (denyOperation()) return;
 
         new BDToolboxGui(player).open();
@@ -83,7 +83,7 @@ public class BDToolsState {
 
         var player = this.player.getEntity(this.server);
         if (player != null) {
-            player.sendMessageToClient(success ? Text.translatable(UNDO, blocksChanged[0]).formatted(Formatting.AQUA)
+            player.sendSystemMessage(success ? Component.translatable(UNDO, blocksChanged[0]).withStyle(ChatFormatting.AQUA)
                             : UNDO_FAIL, false);
         }
     }
@@ -96,7 +96,7 @@ public class BDToolsState {
 
         var player = this.player.getEntity(this.server);
         if (player != null) {
-            player.sendMessageToClient(success ? Text.translatable(REDO, blocksChanged[0]).formatted(Formatting.AQUA)
+            player.sendSystemMessage(success ? Component.translatable(REDO, blocksChanged[0]).withStyle(ChatFormatting.AQUA)
                             : REDO_FAIL, false);
         }
     }
@@ -107,12 +107,12 @@ public class BDToolsState {
         var player = this.player.getEntity(this.server);
         if (player != null) {
             var params = OperationParams.of(player.getInventory());
-            var world = player.getEntityWorld();
+            var world = player.level();
             int[] blocksChanged = {0};
 
             this.audits.audit(world,
                     au -> {
-                        for (var pos : BlockPos.iterate(area.min(), area.max())) {
+                        for (var pos : BlockPos.betweenClosed(area.min(), area.max())) {
                             if (restriction != null && !restriction.contains(pos)) {
                                 continue;
                             }
@@ -124,8 +124,8 @@ public class BDToolsState {
                         }
                     }, blocksChanged);
 
-            player.sendMessageToClient(Text.translatable(OPERATION, blocksChanged[0])
-                    .formatted(Formatting.LIGHT_PURPLE), false);
+            player.sendSystemMessage(Component.translatable(OPERATION, blocksChanged[0])
+                    .withStyle(ChatFormatting.LIGHT_PURPLE), false);
         }
     }
 
@@ -135,7 +135,7 @@ public class BDToolsState {
         var player = this.player.getEntity(this.server);
         if (player != null) {
             var params = OperationParams.of(player.getInventory());
-            var world = player.getEntityWorld();
+            var world = player.level();
             int[] blocksChanged = {0};
 
             double xRad = area.size().getX() * 0.5 + 0.25;
@@ -144,8 +144,8 @@ public class BDToolsState {
 
             this.audits.audit(world,
                     au -> {
-                        var center = Vec3d.ofCenter(area.min()).add(Vec3d.ofCenter(area.max())).multiply(0.5);
-                        for (var pos : BlockPos.iterate(area.min(), area.max())) {
+                        var center = Vec3.atCenterOf(area.min()).add(Vec3.atCenterOf(area.max())).scale(0.5);
+                        for (var pos : BlockPos.betweenClosed(area.min(), area.max())) {
                             if (restriction != null && !restriction.contains(pos)) {
                                 continue;
                             }
@@ -153,9 +153,9 @@ public class BDToolsState {
                                 continue;
                             }
 
-                            double lx = pos.getX() + 0.5 - center.getX();
-                            double ly = pos.getY() + 0.5 - center.getY();
-                            double lz = pos.getZ() + 0.5 - center.getZ();
+                            double lx = pos.getX() + 0.5 - center.x();
+                            double ly = pos.getY() + 0.5 - center.y();
+                            double lz = pos.getZ() + 0.5 - center.z();
 
                             double h = ((lx * lx) / (xRad * xRad)) + ((ly * ly) / (yRad * yRad)) + ((lz * lz) / (zRad * zRad));
 
@@ -167,8 +167,8 @@ public class BDToolsState {
                         }
                     }, blocksChanged);
 
-            player.sendMessageToClient(Text.translatable(OPERATION, blocksChanged[0])
-                    .formatted(Formatting.LIGHT_PURPLE), false);
+            player.sendSystemMessage(Component.translatable(OPERATION, blocksChanged[0])
+                    .withStyle(ChatFormatting.LIGHT_PURPLE), false);
         }
     }
 
@@ -178,7 +178,7 @@ public class BDToolsState {
         var player = this.player.getEntity(this.server);
         if (player != null) {
             var params = OperationParams.of(player.getInventory());
-            var world = player.getEntityWorld();
+            var world = player.level();
             int[] blocksChanged = {0};
 
             double xRad = area.size().getX() * 0.5 + 0.25;
@@ -186,8 +186,8 @@ public class BDToolsState {
 
             this.audits.audit(world,
                     au -> {
-                        var center = Vec3d.ofCenter(area.min()).add(Vec3d.ofCenter(area.max())).multiply(0.5);
-                        for (var pos : BlockPos.iterate(area.min(), area.max())) {
+                        var center = Vec3.atCenterOf(area.min()).add(Vec3.atCenterOf(area.max())).scale(0.5);
+                        for (var pos : BlockPos.betweenClosed(area.min(), area.max())) {
                             if (restriction != null && !restriction.contains(pos)) {
                                 continue;
                             }
@@ -195,8 +195,8 @@ public class BDToolsState {
                                 continue;
                             }
 
-                            double lx = pos.getX() + 0.5 - center.getX();
-                            double lz = pos.getZ() + 0.5 - center.getZ();
+                            double lx = pos.getX() + 0.5 - center.x();
+                            double lz = pos.getZ() + 0.5 - center.z();
 
                             double h = ((lx * lx) / (xRad * xRad)) + ((lz * lz) / (zRad * zRad));
 
@@ -208,8 +208,8 @@ public class BDToolsState {
                         }
                     }, blocksChanged);
 
-            player.sendMessageToClient(Text.translatable(OPERATION, blocksChanged[0])
-                    .formatted(Formatting.LIGHT_PURPLE), false);
+            player.sendSystemMessage(Component.translatable(OPERATION, blocksChanged[0])
+                    .withStyle(ChatFormatting.LIGHT_PURPLE), false);
         }
     }
 
@@ -219,7 +219,7 @@ public class BDToolsState {
         var player = this.player.getEntity(this.server);
         if (player != null) {
             var params = OperationParams.of(player.getInventory());
-            var world = player.getEntityWorld();
+            var world = player.level();
             int[] blocksChanged = {0};
 
             var area = BlockBounds.of(
@@ -229,8 +229,8 @@ public class BDToolsState {
 
             this.audits.audit(world,
                     au -> {
-                        var center = Vec3d.ofCenter(origin);
-                        for (var pos : BlockPos.iterate(area.min(), area.max())) {
+                        var center = Vec3.atCenterOf(origin);
+                        for (var pos : BlockPos.betweenClosed(area.min(), area.max())) {
                             if (restriction != null && !restriction.contains(pos)) {
                                 continue;
                             }
@@ -238,9 +238,9 @@ public class BDToolsState {
                                 continue;
                             }
 
-                            double lx = pos.getX() + 0.5 - center.getX();
-                            double ly = pos.getY() + 0.5 - center.getY();
-                            double lz = pos.getZ() + 0.5 - center.getZ();
+                            double lx = pos.getX() + 0.5 - center.x();
+                            double ly = pos.getY() + 0.5 - center.y();
+                            double lz = pos.getZ() + 0.5 - center.z();
 
                             double h = (lx * lx) + (ly * ly) + (lz * lz);
 
@@ -261,34 +261,34 @@ public class BDToolsState {
         }
     }
 
-    public void updateSelectionDisplay(World world, BlockState state) {
+    public void updateSelectionDisplay(Level world, BlockState state) {
         if (this.selectStart == null) {
             this.deleteSelectionDisplay();
             return;
         }
 
         if (this.selectionDisplay == null) {
-            this.selectionDisplay = new DisplayEntity.BlockDisplayEntity(EntityType.BLOCK_DISPLAY, world);
-            world.spawnEntity(this.selectionDisplay);
+            this.selectionDisplay = new Display.BlockDisplay(EntityType.BLOCK_DISPLAY, world);
+            world.addFreshEntity(this.selectionDisplay);
         }
 
         if (this.selectionDisplay.getBlockState() != state) {
             this.selectionDisplay.setBlockState(state);
         }
 
-        var minPos = new Vec3d(
+        var minPos = new Vec3(
                 Math.min(this.selectStart.getX(), this.selectEnd.getX()),
                 Math.min(this.selectStart.getY(), this.selectEnd.getY()),
                 Math.min(this.selectStart.getZ(), this.selectEnd.getZ())
         );
-        this.selectionDisplay.setPosition(minPos.subtract(0.05, 0.05, 0.05));
+        this.selectionDisplay.setPos(minPos.subtract(0.05, 0.05, 0.05));
 
-        float scaleX = 0.1f + Math.max(this.selectStart.getX(), this.selectEnd.getX()) + 1 - (float) minPos.getX();
-        float scaleY = 0.1f + Math.max(this.selectStart.getY(), this.selectEnd.getY()) + 1 - (float) minPos.getY();
-        float scaleZ = 0.1f + Math.max(this.selectStart.getZ(), this.selectEnd.getZ()) + 1 - (float) minPos.getZ();
+        float scaleX = 0.1f + Math.max(this.selectStart.getX(), this.selectEnd.getX()) + 1 - (float) minPos.x();
+        float scaleY = 0.1f + Math.max(this.selectStart.getY(), this.selectEnd.getY()) + 1 - (float) minPos.y();
+        float scaleZ = 0.1f + Math.max(this.selectStart.getZ(), this.selectEnd.getZ()) + 1 - (float) minPos.z();
 
-        this.selectionDisplay.setTransformation(new AffineTransformation(new Matrix4f().scale(scaleX, scaleY, scaleZ)));
-        this.selectionDisplay.setBrightness(Brightness.FULL);
+        this.selectionDisplay.setTransformation(new Transformation(new Matrix4f().scale(scaleX, scaleY, scaleZ)));
+        this.selectionDisplay.setBrightnessOverride(Brightness.FULL_BRIGHT);
     }
 
     public void tickSelecting(BlockPos cursorPos) {
@@ -319,13 +319,13 @@ public class BDToolsState {
         PLAYERS.clear();
     }
 
-    public static BDToolsState get(ServerPlayerEntity player) {
+    public static BDToolsState get(ServerPlayer player) {
         var ref = PlayerRef.of(player);
         var forPlayer = PLAYERS.computeIfAbsent(ref, p -> new ArrayDeque<>());
 
         BDToolsState state;
         if (forPlayer.isEmpty()) {
-            state = new BDToolsState.Conditional(player.getEntityWorld().getServer(), ref, DEFAULT_MAX_UNDOS, null);
+            state = new BDToolsState.Conditional(player.level().getServer(), ref, DEFAULT_MAX_UNDOS, null);
             forPlayer.addLast(state);
         } else {
             state = forPlayer.getLast();
@@ -335,7 +335,7 @@ public class BDToolsState {
     }
 
     public static class Conditional extends BDToolsState {
-        public static final Text NOT_PERMITTED = Text.translatable("message.builderdash.tool.no_permission").formatted(Formatting.RED);
+        public static final Component NOT_PERMITTED = Component.translatable("message.builderdash.tool.no_permission").withStyle(ChatFormatting.RED);
 
         public Conditional(MinecraftServer server, PlayerRef player, int maxUndos, @Nullable BlockBounds restriction) {
             super(server, player, maxUndos, restriction);
@@ -353,13 +353,13 @@ public class BDToolsState {
                 return false;
             }
 
-            this.player.ifOnline(this.server, p -> p.sendMessageToClient(NOT_PERMITTED, false));
+            this.player.ifOnline(this.server, p -> p.sendSystemMessage(NOT_PERMITTED, false));
             return true;
         }
     }
 
     public static class Forbidden extends BDToolsState {
-        public static final Text FORBIDDEN = Text.translatable("message.builderdash.tool.forbidden").formatted(Formatting.RED);
+        public static final Component FORBIDDEN = Component.translatable("message.builderdash.tool.forbidden").withStyle(ChatFormatting.RED);
 
         public Forbidden(MinecraftServer server, PlayerRef player, int maxUndos, @Nullable BlockBounds restriction) {
             super(server, player, maxUndos, restriction);
@@ -368,7 +368,7 @@ public class BDToolsState {
         @Override
         public boolean denyOperation() {
             this.player.ifOnline(this.server, p ->
-                    p.sendMessageToClient(FORBIDDEN, false));
+                    p.sendSystemMessage(FORBIDDEN, false));
 
             return true;
         }
@@ -378,28 +378,28 @@ public class BDToolsState {
         }
 
         @Override
-        public void updateSelectionDisplay(World world, BlockState state) {
+        public void updateSelectionDisplay(Level world, BlockState state) {
         }
     }
 
     public record OperationParams(Set<Block> filter, boolean blacklist, List<BlockState> paint) {
-        public static OperationParams of(PlayerInventory inv) {
+        public static OperationParams of(Inventory inv) {
             var filter = new HashSet<Block>();
             boolean blacklist = false;
             var paint = new ArrayList<BlockState>();
 
-            for (int i = 0; i < PlayerInventory.HOTBAR_SIZE; i++) {
-                var stack = inv.getStack(i);
-                var data = stack.get(DataComponentTypes.CUSTOM_DATA);
+            for (int i = 0; i < Inventory.SELECTION_SIZE; i++) {
+                var stack = inv.getItem(i);
+                var data = stack.get(DataComponents.CUSTOM_DATA);
 
                 if (data != null) {
-                    var nbt = data.copyNbt();
-                    var bundle = stack.get(DataComponentTypes.BUNDLE_CONTENTS);
+                    var nbt = data.copyTag();
+                    var bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
                     if (nbt.contains("builderdash:filter") && bundle != null) {
-                        for (var fStack : bundle.iterate()) {
+                        for (var fStack : bundle.items()) {
                             if (fStack.getItem() instanceof BlockItem block) {
                                 filter.add(block.getBlock());
-                            } else if (fStack.isOf(Items.GLASS_BOTTLE)) {
+                            } else if (fStack.is(Items.GLASS_BOTTLE)) {
                                 filter.add(Blocks.AIR);
                                 filter.add(Blocks.CAVE_AIR);
                                 filter.add(Blocks.VOID_AIR);
@@ -412,21 +412,21 @@ public class BDToolsState {
                 }
             }
 
-            var offhandStack = inv.getStack(PlayerInventory.OFF_HAND_SLOT);
-            var paintBundle = offhandStack.get(DataComponentTypes.BUNDLE_CONTENTS);
+            var offhandStack = inv.getItem(Inventory.SLOT_OFFHAND);
+            var paintBundle = offhandStack.get(DataComponents.BUNDLE_CONTENTS);
             if (offhandStack.getItem() instanceof BlockItem block) {
-                var stateData = offhandStack.get(DataComponentTypes.BLOCK_STATE);
-                var state = block.getBlock().getDefaultState();
+                var stateData = offhandStack.get(DataComponents.BLOCK_STATE);
+                var state = block.getBlock().defaultBlockState();
                 if (stateData != null) {
-                    state = stateData.applyToState(state);
+                    state = stateData.apply(state);
                 }
                 paint.add(state);
-            } else if (paintBundle != null) for (var stack : paintBundle.iterate()) {
+            } else if (paintBundle != null) for (var stack : paintBundle.items()) {
                 if (stack.getItem() instanceof BlockItem block) {
-                    var stateData = offhandStack.get(DataComponentTypes.BLOCK_STATE);
-                    var state = block.getBlock().getDefaultState();
+                    var stateData = offhandStack.get(DataComponents.BLOCK_STATE);
+                    var state = block.getBlock().defaultBlockState();
                     if (stateData != null) {
-                        state = stateData.applyToState(state);
+                        state = stateData.apply(state);
                     }
 
                     for (int i = 0; i < stack.getCount(); i++) paint.add(state);
@@ -436,17 +436,17 @@ public class BDToolsState {
             return new OperationParams(filter, blacklist, paint);
         }
 
-        public boolean canSet(World world, BlockPos pos) {
+        public boolean canSet(Level world, BlockPos pos) {
             if (filter().isEmpty()) {
                 return true;
             }
 
             for (var block : filter()) {
                 if (blacklist()) {
-                    if (world.getBlockState(pos).isOf(block)) {
+                    if (world.getBlockState(pos).is(block)) {
                         return false;
                     }
-                } else if (world.getBlockState(pos).isOf(block)) {
+                } else if (world.getBlockState(pos).is(block)) {
                     return true;
                 }
             }
@@ -454,9 +454,9 @@ public class BDToolsState {
             return blacklist();
         }
 
-        public BlockState getBlock(World world) {
+        public BlockState getBlock(Level world) {
             if (this.paint().isEmpty()) {
-                return Blocks.AIR.getDefaultState();
+                return Blocks.AIR.defaultBlockState();
             }
 
             return this.paint().get(world.random.nextInt(this.paint().size()));

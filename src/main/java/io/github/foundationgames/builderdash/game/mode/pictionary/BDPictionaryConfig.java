@@ -9,14 +9,14 @@ import io.github.foundationgames.builderdash.game.CustomWordsPersistentState;
 import io.github.foundationgames.builderdash.game.element.title.StyledTitle;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMap;
 import io.github.foundationgames.builderdash.game.map.BuilderdashMapConfig;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Vec3d;
 import org.joml.Quaternionf;
 import xyz.nucleoid.plasmid.api.game.GameSpace;
 import xyz.nucleoid.plasmid.api.game.common.config.WaitingLobbyConfig;
 
 import java.util.ArrayList;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.phys.Vec3;
 
 public record BDPictionaryConfig(
         WaitingLobbyConfig players, WordList wordList, int wordChooseTime, int maxBuildTime, int minBuildTime,
@@ -24,9 +24,9 @@ public record BDPictionaryConfig(
 ) implements BDCustomWordsConfig<BDPictionaryConfig> {
     public static final String PICTIONARY = "pictionary";
 
-    public static final Identifier DEFAULT_CONFIG = Builderdash.id("pictionary");
-    public static final Identifier DOUBLE_CONFIG = Builderdash.id("pictionary_double_rounds");
-    public static final Identifier TEST_CONFIG = Builderdash.id("pictionary_test");
+    public static final ResourceLocation DEFAULT_CONFIG = Builderdash.id("pictionary");
+    public static final ResourceLocation DOUBLE_CONFIG = Builderdash.id("pictionary_double_rounds");
+    public static final ResourceLocation TEST_CONFIG = Builderdash.id("pictionary_test");
 
     public static final MapCodec<BDPictionaryConfig> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             WaitingLobbyConfig.CODEC.fieldOf("players").forGetter(BDPictionaryConfig::players),
@@ -75,12 +75,12 @@ public record BDPictionaryConfig(
     }
 
     @Override
-    public StyledTitle makeTitle(Vec3d pos, float scale, Quaternionf rot) {
+    public StyledTitle makeTitle(Vec3 pos, float scale, Quaternionf rot) {
         return StyledTitle.forMinigame(pos, scale, rot, PICTIONARY, 0x00ff7b);
     }
 
     @Override
-    public void openActivity(GameSpace game, ServerWorld world, BuilderdashMap map) {
+    public void openActivity(GameSpace game, ServerLevel world, BuilderdashMap map) {
         BDPictionaryActivity.open(game, world, map, this);
     }
 }

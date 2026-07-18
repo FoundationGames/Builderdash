@@ -3,17 +3,17 @@ package io.github.foundationgames.builderdash.game.mode.telephone.ui;
 import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import eu.pb4.sgui.api.gui.HotbarGui;
 import io.github.foundationgames.builderdash.game.mode.telephone.BDTelephoneActivity;
-import net.minecraft.item.Items;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Items;
 
 public class GalleryControlGui extends HotbarGui {
-    public static final Text CONTINUE = Text.translatable("item.builderdash.telephone.continue").formatted(Formatting.GOLD);
+    public static final Component CONTINUE = Component.translatable("item.builderdash.telephone.continue").withStyle(ChatFormatting.GOLD);
 
     public final BDTelephoneActivity telephone;
 
-    public GalleryControlGui(ServerPlayerEntity player, BDTelephoneActivity telephone) {
+    public GalleryControlGui(ServerPlayer player, BDTelephoneActivity telephone) {
         super(player);
         this.telephone = telephone;
 

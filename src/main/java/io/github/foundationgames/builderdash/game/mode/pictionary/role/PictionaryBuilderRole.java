@@ -4,18 +4,18 @@ import io.github.foundationgames.builderdash.game.map.BuildZone;
 import io.github.foundationgames.builderdash.game.mode.pictionary.BDPictionaryActivity;
 import io.github.foundationgames.builderdash.game.player.BDPlayer;
 import io.github.foundationgames.builderdash.game.player.BuilderRole;
-import net.minecraft.network.message.MessageType;
-import net.minecraft.network.message.SignedMessage;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.ChatType;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.PlayerChatMessage;
+import net.minecraft.server.level.ServerLevel;
 
 public class PictionaryBuilderRole extends BuilderRole {
-    public static final Text CANNOT_CHAT = Text.translatable("message.builderdash.pictionary.cannot_chat_builder").formatted(Formatting.RED);
+    public static final Component CANNOT_CHAT = Component.translatable("message.builderdash.pictionary.cannot_chat_builder").withStyle(ChatFormatting.RED);
 
     public final BDPictionaryActivity pictionary;
 
-    public PictionaryBuilderRole(ServerWorld world, BDPlayer player, BuildZone buildZone, BDPictionaryActivity pictionary) {
+    public PictionaryBuilderRole(ServerLevel world, BDPlayer player, BuildZone buildZone, BDPictionaryActivity pictionary) {
         super(world, player, buildZone);
 
         this.pictionary = pictionary;
@@ -26,8 +26,8 @@ public class PictionaryBuilderRole extends BuilderRole {
     }
 
     @Override
-    public boolean handleChatMessage(SignedMessage signedMessage, MessageType.Parameters parameters) {
-        this.player.player.ifOnline(this.world, s -> s.sendMessage(CANNOT_CHAT));
+    public boolean handleChatMessage(PlayerChatMessage signedMessage, ChatType.Bound parameters) {
+        this.player.player.ifOnline(this.world, s -> s.sendSystemMessage(CANNOT_CHAT));
         return false;
     }
 
@@ -36,6 +36,6 @@ public class PictionaryBuilderRole extends BuilderRole {
         super.init();
 
         this.player.player.ifOnline(this.world, s ->
-                s.getInventory().clear());
+                s.getInventory().clearContent());
     }
 }

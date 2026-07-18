@@ -1,18 +1,17 @@
 package io.github.foundationgames.builderdash.game.element;
 
-import net.minecraft.server.world.ServerWorld;
-
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
+import net.minecraft.server.level.ServerLevel;
 
 public interface TickingAnimation {
-    boolean tick(ServerWorld world);
+    boolean tick(ServerLevel world);
 
-    static TickingAnimation instant(Consumer<ServerWorld> func) {
+    static TickingAnimation instant(Consumer<ServerLevel> func) {
         return world -> {
             func.accept(world);
             return false;
@@ -39,7 +38,7 @@ public interface TickingAnimation {
         }
 
         @Override
-        public boolean tick(ServerWorld world) {
+        public boolean tick(ServerLevel world) {
             this.time--;
             return this.time > 0;
         }
@@ -53,7 +52,7 @@ public interface TickingAnimation {
         }
 
         @Override
-        public boolean tick(ServerWorld world) {
+        public boolean tick(ServerLevel world) {
             if (this.anims.isEmpty()) {
                 return false;
             }
@@ -74,7 +73,7 @@ public interface TickingAnimation {
         }
 
         @Override
-        public boolean tick(ServerWorld world) {
+        public boolean tick(ServerLevel world) {
             var remove = new HashSet<TickingAnimation>();
             for (var anim : this.anims) {
                 if (!anim.tick(world)) {

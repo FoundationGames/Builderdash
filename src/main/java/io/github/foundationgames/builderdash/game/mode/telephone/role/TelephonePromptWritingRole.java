@@ -3,20 +3,20 @@ package io.github.foundationgames.builderdash.game.mode.telephone.role;
 import io.github.foundationgames.builderdash.game.mode.telephone.BDTelephoneActivity;
 import io.github.foundationgames.builderdash.game.player.BDPlayer;
 import io.github.foundationgames.builderdash.game.player.PlayerRole;
-import net.minecraft.network.message.MessageType;
-import net.minecraft.network.message.SignedMessage;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.ChatType;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.PlayerChatMessage;
+import net.minecraft.server.level.ServerLevel;
 import org.jetbrains.annotations.Nullable;
 
 public class TelephonePromptWritingRole extends PlayerRole.Flying {
     public final BDTelephoneActivity telephone;
 
     public final int seriesIndex;
-    public @Nullable Text promptText = null;
+    public @Nullable Component promptText = null;
 
-    public TelephonePromptWritingRole(ServerWorld world, BDPlayer player, BDTelephoneActivity telephone, int seriesIndex) {
+    public TelephonePromptWritingRole(ServerLevel world, BDPlayer player, BDTelephoneActivity telephone, int seriesIndex) {
         super(world, player);
 
         this.telephone = telephone;
@@ -24,13 +24,13 @@ public class TelephonePromptWritingRole extends PlayerRole.Flying {
     }
 
     @Override
-    public boolean handleChatMessage(SignedMessage signedMessage, MessageType.Parameters parameters) {
-        var content = signedMessage.getSignedContent();
+    public boolean handleChatMessage(PlayerChatMessage signedMessage, ChatType.Bound parameters) {
+        var content = signedMessage.signedContent();
         if (content.length() >= 100) {
             content = content.substring(0, 100);
         }
 
-        this.promptText = Text.literal(content).formatted(Formatting.AQUA);
+        this.promptText = Component.literal(content).withStyle(ChatFormatting.AQUA);
         this.telephone.receivePrompt(this.player, this, content);
 
         return false;

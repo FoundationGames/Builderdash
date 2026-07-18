@@ -7,15 +7,15 @@ import com.mojang.authlib.properties.PropertyMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import me.lucko.fabric.api.permissions.v0.Permissions;
-import net.minecraft.block.NoteBlock;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.ProfileComponent;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ResolvableProfile;
+import net.minecraft.world.level.block.NoteBlock;
 import xyz.nucleoid.map_templates.MapTemplate;
 import xyz.nucleoid.map_templates.TemplateRegion;
 import xyz.nucleoid.plasmid.api.game.GameOpenException;
@@ -43,26 +43,26 @@ public enum BDUtil {;
     public static final String PERM_GLOBAL_TOOLBOX = Builderdash.ID + ".toolbox";
     public static final String PERM_GLOBAL_CONFIG = Builderdash.ID + ".config";
 
-    public static TemplateRegion regionOrThrow(Identifier mapId, MapTemplate template, String marker) throws GameOpenException {
+    public static TemplateRegion regionOrThrow(ResourceLocation mapId, MapTemplate template, String marker) throws GameOpenException {
         var region = template.getMetadata().getFirstRegion(marker);
         if (region == null) {
-            throw new GameOpenException(Text.literal(String.format("Map %s is missing region '%s'", mapId, marker)));
+            throw new GameOpenException(Component.literal(String.format("Map %s is missing region '%s'", mapId, marker)));
         }
 
         return region;
     }
 
-    public static ProfileComponent skinProfile(String queryBase64) {
+    public static ResolvableProfile skinProfile(String queryBase64) {
         var map = ImmutableMultimap.<String, Property>builder();
         map.put("textures", new Property("textures", queryBase64));
         var properties = new PropertyMap(map.build());
 
-        return ProfileComponent.ofStatic(new GameProfile(Util.NIL_UUID, "", properties));
+        return ResolvableProfile.createResolved(new GameProfile(Util.NIL_UUID, "", properties));
     }
 
     public static ItemStack customHead(String queryBase64) {
-        var stack = Items.PLAYER_HEAD.getDefaultStack();
-        stack.set(DataComponentTypes.PROFILE, skinProfile(queryBase64));
+        var stack = Items.PLAYER_HEAD.getDefaultInstance();
+        stack.set(DataComponents.PROFILE, skinProfile(queryBase64));
 
         return stack;
     }
@@ -83,13 +83,13 @@ public enum BDUtil {;
         return ints;
     }
 
-    public static Predicate<ServerCommandSource> permission(String game, String permission, int otherwise) {
+    public static Predicate<CommandSourceStack> permission(String game, String permission, int otherwise) {
         return src ->
                 Permissions.check(src, Builderdash.ID + ".any." + permission, otherwise) &&
                 Permissions.check(src, Builderdash.ID + "." + game + "." + permission, otherwise);
     }
 
     public static float fSharp(int note) {
-        return 1.0f / NoteBlock.getNotePitch(note);
+        return 1.0f / NoteBlock.getPitchFromNote(note);
     }
 }

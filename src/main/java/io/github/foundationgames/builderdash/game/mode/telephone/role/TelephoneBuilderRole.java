@@ -4,14 +4,14 @@ import io.github.foundationgames.builderdash.game.map.BuildZone;
 import io.github.foundationgames.builderdash.game.mode.telephone.BDTelephoneActivity;
 import io.github.foundationgames.builderdash.game.player.BDPlayer;
 import io.github.foundationgames.builderdash.game.player.SubmissionBuilderRole;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.level.ServerLevel;
 
 public class TelephoneBuilderRole extends SubmissionBuilderRole {
     public final BDTelephoneActivity telephone;
 
     public final int seriesIndex;
 
-    public TelephoneBuilderRole(ServerWorld world, BDPlayer player, BuildZone buildZone, BDTelephoneActivity telephone, int seriesIndex) {
+    public TelephoneBuilderRole(ServerLevel world, BDPlayer player, BuildZone buildZone, BDTelephoneActivity telephone, int seriesIndex) {
         super(world, player, buildZone);
         this.telephone = telephone;
         this.seriesIndex = seriesIndex;
